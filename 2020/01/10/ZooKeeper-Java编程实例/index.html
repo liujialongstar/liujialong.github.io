@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"liujialongstar.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.3","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="简单的监听客户端为向你介绍ZooKeeper的Java API, 我们开发了一个简单的监听客户端. 这个客户端监听一个Zookeeper节点的变化, 并启停一个程序作为响应.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ZooKeeper Java编程实例">
+<meta property="og:url" content="https://liujialongstar.github.io/2020/01/10/ZooKeeper-Java%E7%BC%96%E7%A8%8B%E5%AE%9E%E4%BE%8B/index.html">
+<meta property="og:site_name" content="Longlong">
+<meta property="og:description" content="简单的监听客户端为向你介绍ZooKeeper的Java API, 我们开发了一个简单的监听客户端. 这个客户端监听一个Zookeeper节点的变化, 并启停一个程序作为响应.">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-01-10T07:21:14.000Z">
+<meta property="article:modified_time" content="2021-01-29T02:21:56.795Z">
+<meta property="article:author" content="Liujialong">
+<meta property="article:tag" content="Zookeeper">
+<meta property="article:tag" content="文档翻译">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://liujialongstar.github.io/2020/01/10/ZooKeeper-Java%E7%BC%96%E7%A8%8B%E5%AE%9E%E4%BE%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>ZooKeeper Java编程实例 | Longlong</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <main class="main">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+        <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longlong</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">A Rookie Programmer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#简单的监听客户端"><span class="nav-number">1.</span> <span class="nav-text">简单的监听客户端</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#需求"><span class="nav-number">1.1.</span> <span class="nav-text">需求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#程序设计"><span class="nav-number">1.2.</span> <span class="nav-text">程序设计</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Executor类"><span class="nav-number">2.</span> <span class="nav-text">Executor类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DataMonitor类"><span class="nav-number">3.</span> <span class="nav-text">DataMonitor类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#完整的源码"><span class="nav-number">4.</span> <span class="nav-text">完整的源码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Executor-java"><span class="nav-number">4.1.</span> <span class="nav-text">Executor.java</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DataMonitor-java"><span class="nav-number">4.2.</span> <span class="nav-text">DataMonitor.java</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Liujialong</p>
+  <div class="site-description" itemprop="description">My records for programming and life</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </header>
+
+      
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div id="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+      <div class="main-inner">
+        
+
+        <div class="content post posts-expand">
+          
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://liujialongstar.github.io/2020/01/10/ZooKeeper-Java%E7%BC%96%E7%A8%8B%E5%AE%9E%E4%BE%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Liujialong">
+      <meta itemprop="description" content="My records for programming and life">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longlong">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ZooKeeper Java编程实例
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-01-10 15:21:14" itemprop="dateCreated datePublished" datetime="2020-01-10T15:21:14+08:00">2020-01-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-01-29 10:21:56" itemprop="dateModified" datetime="2021-01-29T10:21:56+08:00">2021-01-29</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Zookeeper/" itemprop="url" rel="index"><span itemprop="name">Zookeeper</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="简单的监听客户端"><a href="#简单的监听客户端" class="headerlink" title="简单的监听客户端"></a>简单的监听客户端</h2><p>为向你介绍ZooKeeper的Java API, 我们开发了一个简单的监听客户端. 这个客户端监听一个Zookeeper节点的变化, 并启停一个程序作为响应.</p>
+<a id="more"></a>
+
+<h3 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h3><p>客户端有4个需求:</p>
+<ul>
+<li>客户端需要以下参数:<ul>
+<li>Zookeeper服务的地址</li>
+<li>被监听节点的名称</li>
+<li>被写入的文件的名称</li>
+<li>带参数的可执行程序</li>
+</ul>
+</li>
+<li>客户端获取节点数据并启动可执行程序</li>
+<li>如果节点变更, 客户端将重新获取数据并重启可执行程序</li>
+<li>如果节点消失了, 客户端将关闭可执行程序</li>
+</ul>
+<h3 id="程序设计"><a href="#程序设计" class="headerlink" title="程序设计"></a>程序设计</h3><p>按照惯例, Zookeeper应用分为两部分, 一个维护连接, 另一个监听数据. 在这个应用中, 名为<strong>Executor</strong>的类维护Zookeeper连接, 名为<strong>DataMonitor</strong>的类监听数据. 同样的, <strong>Executor</strong>包含主线程和可执行逻辑. 它负责用户交互. 用户传递一个可执行程序作为参数, 这个例子就会根据节点的状态关闭或重启.</p>
+<h2 id="Executor类"><a href="#Executor类" class="headerlink" title="Executor类"></a>Executor类</h2><p>Executor对象是这个应用的主容器. 它包含<strong>ZooKeeper</strong>对象, <strong>DataMonitor</strong>对象.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// from the Executor class...</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (args.length &lt; <span class="number">4</span>) &#123;</span><br><span class="line">        System.err</span><br><span class="line">                .println(<span class="string">"USAGE: Executor hostPort znode filename program [args ...]"</span>);</span><br><span class="line">        System.exit(<span class="number">2</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    String hostPort = args[<span class="number">0</span>];</span><br><span class="line">    String znode = args[<span class="number">1</span>];</span><br><span class="line">    String filename = args[<span class="number">2</span>];</span><br><span class="line">    String exec[] = <span class="keyword">new</span> String[args.length - <span class="number">3</span>];</span><br><span class="line">    System.arraycopy(args, <span class="number">3</span>, exec, <span class="number">0</span>, exec.length);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">new</span> Executor(hostPort, znode, filename, exec).run();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">Executor</span><span class="params">(String hostPort, String znode, String filename,</span></span></span><br><span class="line"><span class="function"><span class="params">        String exec[])</span> <span class="keyword">throws</span> KeeperException, IOException </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.filename = filename;</span><br><span class="line">    <span class="keyword">this</span>.exec = exec;</span><br><span class="line">    zk = <span class="keyword">new</span> ZooKeeper(hostPort, <span class="number">3000</span>, <span class="keyword">this</span>);</span><br><span class="line">    dm = <span class="keyword">new</span> DataMonitor(zk, znode, <span class="keyword">null</span>, <span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">            <span class="keyword">while</span> (!dm.dead) &#123;</span><br><span class="line">                wait();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Executor</strong>的任务是启停你传递的可执行程序. 它完成上述动作, 作为对ZooKeeper对象激发的事件的响应. 就像你在上述代码中看到的, Executor给自身传递一个参数作为ZooKeeper构造器中的Watcher 参数. 它同样传递一个参数给自己作为DataMonitor构造器中的DataMonitorListener参数. Executor的定义, 实现了下面这些接口:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Executor</span> <span class="keyword">implements</span> <span class="title">Watcher</span>, <span class="title">Runnable</span>, <span class="title">DataMonitor</span>.<span class="title">DataMonitorListener</span> </span>&#123;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p><strong>Watcher</strong>接口由ZooKeeper Java API定义. ZooKeeper使用它和自己的容器沟通. 它只支持一个方法, <code>process()</code>, ZooKeeper使用此方法沟通一系列主线程感兴趣的事件, 例如, Zookeeper连接状态或者Zookeeper会话. 本例中的Executor只是简单的将这些事件传递给DataMonitor, 让DataMonitor自己决定怎么处理这些事件. 它这么做说明了, 按照惯例, Executor或者某些类似Executor的对象”拥有”Zookeeper连接, 但是它们可以自由的将事件到事件委托给其他对象. 这被默认用来作为发送事件的通道.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">process</span><span class="params">(WatchedEvent event)</span> </span>&#123;</span><br><span class="line">    dm.process(event);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>另一方面, <strong>DataMonitorListener</strong>接口并不是Zookeeper API的一部分, 这是一个第三方接口, 专为这个样例应用设计. DataMonitor对象使用它和自己的容器沟通, 这个容器就是Executor对象. DataMOnitorListener接口如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">DataMonitorListener</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    * The existence status of the node has changed.</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">exists</span><span class="params">(<span class="keyword">byte</span> data[])</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    * The ZooKeeper session is no longer valid.</span></span><br><span class="line"><span class="comment">    *</span></span><br><span class="line"><span class="comment">    * <span class="doctag">@param</span> rc</span></span><br><span class="line"><span class="comment">    * the ZooKeeper reason code</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">closing</span><span class="params">(<span class="keyword">int</span> rc)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个接口定义在DataMonitor类中, 并被Executor实现. 当<code>Executor.exists()</code>被调用, Executor决定每次是开启还是关闭. 记住, 节点不存在时, 程序将停止.</p>
+<p>当<code>Executor.closing()</code>被调用时, Executor决定是否关闭自己, 以响应Zookeeper连接的长时间断开.</p>
+<p>就像你猜测的那样, DataMonitor是一个调用这些方法, 响应Zookeeper状态变化的对象.</p>
+<p>下面时Executor对<code>DataMonitorListener.exists()</code>和<code>DataMonitorListener.closing</code>的实现:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">exists</span><span class="params">( <span class="keyword">byte</span>[] data )</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (data == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (child != <span class="keyword">null</span>) &#123;</span><br><span class="line">            System.out.println(<span class="string">"Killing process"</span>);</span><br><span class="line">            child.destroy();</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                child.waitFor();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">           &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        child = <span class="keyword">null</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (child != <span class="keyword">null</span>) &#123;</span><br><span class="line">            System.out.println(<span class="string">"Stopping child"</span>);</span><br><span class="line">            child.destroy();</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">               child.waitFor();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            FileOutputStream fos = <span class="keyword">new</span> FileOutputStream(filename);</span><br><span class="line">            fos.write(data);</span><br><span class="line">            fos.close();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            System.out.println(<span class="string">"Starting child"</span>);</span><br><span class="line">            child = Runtime.getRuntime().exec(exec);</span><br><span class="line">            <span class="keyword">new</span> StreamWriter(child.getInputStream(), System.out);</span><br><span class="line">            <span class="keyword">new</span> StreamWriter(child.getErrorStream(), System.err);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">closing</span><span class="params">(<span class="keyword">int</span> rc)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">        notifyAll();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="DataMonitor类"><a href="#DataMonitor类" class="headerlink" title="DataMonitor类"></a>DataMonitor类</h2><p>DataMonitor拥有Zookeeper逻辑的主体部分. 它只要是异步和事件驱动的. DataMonitor在构造器如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">DataMonitor</span><span class="params">(ZooKeeper zk, String znode, Watcher chainedWatcher,</span></span></span><br><span class="line"><span class="function"><span class="params">        DataMonitorListener listener)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.zk = zk;</span><br><span class="line">    <span class="keyword">this</span>.znode = znode;</span><br><span class="line">    <span class="keyword">this</span>.chainedWatcher = chainedWatcher;</span><br><span class="line">    <span class="keyword">this</span>.listener = listener;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Get things started by checking if the node exists. We are going</span></span><br><span class="line">    <span class="comment">// to be completely event driven</span></span><br></pre></td></tr></table></figure>
+
+<p>调用<code>ZooKeeper.exists()</code>将检查节点是否存在, 设置一个监听器, 并且传递一个引用给自身作为完成回调. </p>
+<blockquote>
+<p>不要将完成回调和监听回调混淆了. <code>ZooKeeper.exists()</code> 完成回调, 在DataMonitor对象中作为<code>StatCallback.processResult()</code>的实现, 当监听操作的异步设置(<code>ZooKeeper.exists()</code>)完成时会调用这个完成回调.<br>另一方面, 因为Executor注册为一个ZooKeeper对象的监听器, 监听器触发时将向Executor对象发送一个事件.<br>BTW, 你可能注意到DataMonitor同样可以将自己注册为这个特殊监听事件的一个Watcher. </p>
+</blockquote>
+<p>当<code>ZooKeeper.exists()</code>操作在服务器端完成时, ZooKeeper API将调用客户端上的完成回调:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">processResult</span><span class="params">(<span class="keyword">int</span> rc, String path, Object ctx, Stat stat)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">boolean</span> exists;</span><br><span class="line">    <span class="keyword">switch</span> (rc) &#123;</span><br><span class="line">    <span class="keyword">case</span> Code.Ok:</span><br><span class="line">        exists = <span class="keyword">true</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> Code.NoNode:</span><br><span class="line">        exists = <span class="keyword">false</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> Code.SessionExpired:</span><br><span class="line">    <span class="keyword">case</span> Code.NoAuth:</span><br><span class="line">        dead = <span class="keyword">true</span>;</span><br><span class="line">        listener.closing(rc);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="comment">// Retry errors</span></span><br><span class="line">        zk.exists(znode, <span class="keyword">true</span>, <span class="keyword">this</span>, <span class="keyword">null</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">byte</span> b[] = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (exists) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            b = zk.getData(znode, <span class="keyword">false</span>, <span class="keyword">null</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (KeeperException e) &#123;</span><br><span class="line">            <span class="comment">// We don't need to worry about recovering now. The watch</span></span><br><span class="line">            <span class="comment">// callbacks will kick off any exception handling</span></span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;     </span><br><span class="line">    <span class="keyword">if</span> ((b == <span class="keyword">null</span> &amp;amp;&amp;amp; b != prevData)</span><br><span class="line">        || (b != <span class="keyword">null</span> &amp;amp;&amp;amp; !Arrays.equals(prevData, b))) &#123;</span><br><span class="line">        listener.exists(b);&lt;/emphasis&gt;</span><br><span class="line">        prevData = b;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这段代码首先检查一些错误代码, 包括节点存在, 致命错误和可恢复错误. 如果文件或节点存在, 它将从节点读取代码, 接下来, 如果节点状态改变了, 它将调用Executor的exists()回调. 注意, 不必为getData处理任何异常, 因为它有为任何引发错误准备的几个监听器: 如果节点在调用<code>ZooKeeper.getData()</code>之前被删除, 由<code>ZooKeeper.exists()</code>设置的监听事件将触发一个回调; 如果有连接错误, 当重新连接时, 一个连接事件将会发送.</p>
+<p>最后, 注意DataMonitor是如何处理这些监听事件的:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">process</span><span class="params">(WatchedEvent event)</span> </span>&#123;</span><br><span class="line">    String path = event.getPath();</span><br><span class="line">    <span class="keyword">if</span> (event.getType() == Event.EventType.None) &#123;</span><br><span class="line">        <span class="comment">// We are are being told that the state of the</span></span><br><span class="line">        <span class="comment">// connection has changed</span></span><br><span class="line">        <span class="keyword">switch</span> (event.getState()) &#123;</span><br><span class="line">        <span class="keyword">case</span> SyncConnected:</span><br><span class="line">            <span class="comment">// In this particular example we don't need to do anything</span></span><br><span class="line">            <span class="comment">// here - watches are automatically re-registered with</span></span><br><span class="line">            <span class="comment">// server and any watches triggered while the client was</span></span><br><span class="line">            <span class="comment">// disconnected will be delivered (in order of course)</span></span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> Expired:</span><br><span class="line">            <span class="comment">// It's all over</span></span><br><span class="line">            dead = <span class="keyword">true</span>;</span><br><span class="line">            listener.closing(KeeperException.Code.SessionExpired);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (path != <span class="keyword">null</span> &amp;&amp; path.equals(znode)) &#123;</span><br><span class="line">            <span class="comment">// Something has changed on the node, let's find out</span></span><br><span class="line">            zk.exists(znode, <span class="keyword">true</span>, <span class="keyword">this</span>, <span class="keyword">null</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (chainedWatcher != <span class="keyword">null</span>) &#123;</span><br><span class="line">        chainedWatcher.process(event);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果客户端能在会话过期(Expired事件)之前重新建立到ZooKeeper的通信通道(SyncConnected事件), 所有的会话监听器将自动与服务器重新建立联系. 在这个函数中, 当DataMonitor获取一个节点的事件后, 它将调用<code>ZooKeeper.exists()</code>方法, 以获取什么发生了变化.</p>
+<h2 id="完整的源码"><a href="#完整的源码" class="headerlink" title="完整的源码"></a>完整的源码</h2><h3 id="Executor-java"><a href="#Executor-java" class="headerlink" title="Executor.java"></a>Executor.java</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * A simple example program to use DataMonitor to start and</span></span><br><span class="line"><span class="comment"> * stop executables based on a znode. The program watches the</span></span><br><span class="line"><span class="comment"> * specified znode and saves the data that corresponds to the</span></span><br><span class="line"><span class="comment"> * znode in the filesystem. It also starts the specified program</span></span><br><span class="line"><span class="comment"> * with the specified arguments when the znode exists and kills</span></span><br><span class="line"><span class="comment"> * the program if the znode goes away.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">import</span> java.io.FileOutputStream;</span><br><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"><span class="keyword">import</span> java.io.InputStream;</span><br><span class="line"><span class="keyword">import</span> java.io.OutputStream;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.apache.zookeeper.KeeperException;</span><br><span class="line"><span class="keyword">import</span> org.apache.zookeeper.WatchedEvent;</span><br><span class="line"><span class="keyword">import</span> org.apache.zookeeper.Watcher;</span><br><span class="line"><span class="keyword">import</span> org.apache.zookeeper.ZooKeeper;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Executor</span></span></span><br><span class="line"><span class="class">    <span class="keyword">implements</span> <span class="title">Watcher</span>, <span class="title">Runnable</span>, <span class="title">DataMonitor</span>.<span class="title">DataMonitorListener</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    String znode;</span><br><span class="line">    DataMonitor dm;</span><br><span class="line">    ZooKeeper zk;</span><br><span class="line">    String filename;</span><br><span class="line">    String exec[];</span><br><span class="line">    Process child;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Executor</span><span class="params">(String hostPort, String znode, String filename,</span></span></span><br><span class="line"><span class="function"><span class="params">            String exec[])</span> <span class="keyword">throws</span> KeeperException, IOException </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.filename = filename;</span><br><span class="line">        <span class="keyword">this</span>.exec = exec;</span><br><span class="line">        zk = <span class="keyword">new</span> ZooKeeper(hostPort, <span class="number">3000</span>, <span class="keyword">this</span>);</span><br><span class="line">        dm = <span class="keyword">new</span> DataMonitor(zk, znode, <span class="keyword">null</span>, <span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> args</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (args.length &lt; <span class="number">4</span>) &#123;</span><br><span class="line">            System.err</span><br><span class="line">                    .println(<span class="string">"USAGE: Executor hostPort znode filename program [args ...]"</span>);</span><br><span class="line">            System.exit(<span class="number">2</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        String hostPort = args[<span class="number">0</span>];</span><br><span class="line">        String znode = args[<span class="number">1</span>];</span><br><span class="line">        String filename = args[<span class="number">2</span>];</span><br><span class="line">        String exec[] = <span class="keyword">new</span> String[args.length - <span class="number">3</span>];</span><br><span class="line">        System.arraycopy(args, <span class="number">3</span>, exec, <span class="number">0</span>, exec.length);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">new</span> Executor(hostPort, znode, filename, exec).run();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/***************************************************************************</span></span><br><span class="line"><span class="comment">     * We do process any events ourselves, we just need to forward them on.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@see</span> org.apache.zookeeper.Watcher#process(org.apache.zookeeper.proto.WatcherEvent)</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">process</span><span class="params">(WatchedEvent event)</span> </span>&#123;</span><br><span class="line">        dm.process(event);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">                <span class="keyword">while</span> (!dm.dead) &#123;</span><br><span class="line">                    wait();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">closing</span><span class="params">(<span class="keyword">int</span> rc)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">            notifyAll();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">StreamWriter</span> <span class="keyword">extends</span> <span class="title">Thread</span> </span>&#123;</span><br><span class="line">        OutputStream os;</span><br><span class="line"></span><br><span class="line">        InputStream is;</span><br><span class="line"></span><br><span class="line">        StreamWriter(InputStream is, OutputStream os) &#123;</span><br><span class="line">            <span class="keyword">this</span>.is = is;</span><br><span class="line">            <span class="keyword">this</span>.os = os;</span><br><span class="line">            start();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">byte</span> b[] = <span class="keyword">new</span> <span class="keyword">byte</span>[<span class="number">80</span>];</span><br><span class="line">            <span class="keyword">int</span> rc;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">while</span> ((rc = is.read(b)) &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                    os.write(b, <span class="number">0</span>, rc);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">exists</span><span class="params">(<span class="keyword">byte</span>[] data)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (data == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (child != <span class="keyword">null</span>) &#123;</span><br><span class="line">                System.out.println(<span class="string">"Killing process"</span>);</span><br><span class="line">                child.destroy();</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    child.waitFor();</span><br><span class="line">                &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            child = <span class="keyword">null</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (child != <span class="keyword">null</span>) &#123;</span><br><span class="line">                System.out.println(<span class="string">"Stopping child"</span>);</span><br><span class="line">                child.destroy();</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    child.waitFor();</span><br><span class="line">                &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                FileOutputStream fos = <span class="keyword">new</span> FileOutputStream(filename);</span><br><span class="line">                fos.write(data);</span><br><span class="line">                fos.close();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                System.out.println(<span class="string">"Starting child"</span>);</span><br><span class="line">                child = Runtime.getRuntime().exec(exec);</span><br><span class="line">                <span class="keyword">new</span> StreamWriter(child.getInputStream(), System.out);</span><br><span class="line">                <span class="keyword">new</span> StreamWriter(child.getErrorStream(), System.err);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="DataMonitor-java"><a href="#DataMonitor-java" class="headerlink" title="DataMonitor.java"></a>DataMonitor.java</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * A simple class that monitors the data and existence of a ZooKeeper</span></span><br><span class="line"><span class="comment"> * node. It uses asynchronous ZooKeeper APIs.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">import</span> java.util.Arrays;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.apache.zookeeper.KeeperException;</span><br><span class="line"><span class="keyword">import</span> org.apache.zookeeper.WatchedEvent;</span><br><span class="line"><span class="keyword">import</span> org.apache.zookeeper.Watcher;</span><br><span class="line"><span class="keyword">import</span> org.apache.zookeeper.ZooKeeper;</span><br><span class="line"><span class="keyword">import</span> org.apache.zookeeper.AsyncCallback.StatCallback;</span><br><span class="line"><span class="keyword">import</span> org.apache.zookeeper.KeeperException.Code;</span><br><span class="line"><span class="keyword">import</span> org.apache.zookeeper.data.Stat;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DataMonitor</span> <span class="keyword">implements</span> <span class="title">Watcher</span>, <span class="title">StatCallback</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    ZooKeeper zk;</span><br><span class="line">    String znode;</span><br><span class="line">    Watcher chainedWatcher;</span><br><span class="line">    <span class="keyword">boolean</span> dead;</span><br><span class="line">    DataMonitorListener listener;</span><br><span class="line">    <span class="keyword">byte</span> prevData[];</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">DataMonitor</span><span class="params">(ZooKeeper zk, String znode, Watcher chainedWatcher,</span></span></span><br><span class="line"><span class="function"><span class="params">            DataMonitorListener listener)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.zk = zk;</span><br><span class="line">        <span class="keyword">this</span>.znode = znode;</span><br><span class="line">        <span class="keyword">this</span>.chainedWatcher = chainedWatcher;</span><br><span class="line">        <span class="keyword">this</span>.listener = listener;</span><br><span class="line">        <span class="comment">// Get things started by checking if the node exists. We are going</span></span><br><span class="line">        <span class="comment">// to be completely event driven</span></span><br><span class="line">        zk.exists(znode, <span class="keyword">true</span>, <span class="keyword">this</span>, <span class="keyword">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Other classes use the DataMonitor by implementing this method</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">DataMonitorListener</span> </span>&#123;</span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * The existence status of the node has changed.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">exists</span><span class="params">(<span class="keyword">byte</span> data[])</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * The ZooKeeper session is no longer valid.</span></span><br><span class="line"><span class="comment">         *</span></span><br><span class="line"><span class="comment">         * <span class="doctag">@param</span> rc</span></span><br><span class="line"><span class="comment">         *                the ZooKeeper reason code</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">closing</span><span class="params">(<span class="keyword">int</span> rc)</span></span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">process</span><span class="params">(WatchedEvent event)</span> </span>&#123;</span><br><span class="line">        String path = event.getPath();</span><br><span class="line">        <span class="keyword">if</span> (event.getType() == Event.EventType.None) &#123;</span><br><span class="line">            <span class="comment">// We are are being told that the state of the</span></span><br><span class="line">            <span class="comment">// connection has changed</span></span><br><span class="line">            <span class="keyword">switch</span> (event.getState()) &#123;</span><br><span class="line">            <span class="keyword">case</span> SyncConnected:</span><br><span class="line">                <span class="comment">// In this particular example we don't need to do anything</span></span><br><span class="line">                <span class="comment">// here - watches are automatically re-registered with</span></span><br><span class="line">                <span class="comment">// server and any watches triggered while the client was</span></span><br><span class="line">                <span class="comment">// disconnected will be delivered (in order of course)</span></span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> Expired:</span><br><span class="line">                <span class="comment">// It's all over</span></span><br><span class="line">                dead = <span class="keyword">true</span>;</span><br><span class="line">                listener.closing(KeeperException.Code.SessionExpired);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (path != <span class="keyword">null</span> &amp;&amp; path.equals(znode)) &#123;</span><br><span class="line">                <span class="comment">// Something has changed on the node, let's find out</span></span><br><span class="line">                zk.exists(znode, <span class="keyword">true</span>, <span class="keyword">this</span>, <span class="keyword">null</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (chainedWatcher != <span class="keyword">null</span>) &#123;</span><br><span class="line">            chainedWatcher.process(event);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">processResult</span><span class="params">(<span class="keyword">int</span> rc, String path, Object ctx, Stat stat)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">boolean</span> exists;</span><br><span class="line">        <span class="keyword">switch</span> (rc) &#123;</span><br><span class="line">        <span class="keyword">case</span> Code.Ok:</span><br><span class="line">            exists = <span class="keyword">true</span>;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> Code.NoNode:</span><br><span class="line">            exists = <span class="keyword">false</span>;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> Code.SessionExpired:</span><br><span class="line">        <span class="keyword">case</span> Code.NoAuth:</span><br><span class="line">            dead = <span class="keyword">true</span>;</span><br><span class="line">            listener.closing(rc);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            <span class="comment">// Retry errors</span></span><br><span class="line">            zk.exists(znode, <span class="keyword">true</span>, <span class="keyword">this</span>, <span class="keyword">null</span>);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">byte</span> b[] = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">if</span> (exists) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                b = zk.getData(znode, <span class="keyword">false</span>, <span class="keyword">null</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (KeeperException e) &#123;</span><br><span class="line">                <span class="comment">// We don't need to worry about recovering now. The watch</span></span><br><span class="line">                <span class="comment">// callbacks will kick off any exception handling</span></span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> ((b == <span class="keyword">null</span> &amp;&amp; b != prevData)</span><br><span class="line">                || (b != <span class="keyword">null</span> &amp;&amp; !Arrays.equals(prevData, b))) &#123;</span><br><span class="line">            listener.exists(b);</span><br><span class="line">            prevData = b;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>本文翻译自 <a href="https://zookeeper.apache.org/doc/r3.5.6/javaExample.html" target="_blank" rel="noopener">ZooKeeper Java Example</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Zookeeper/" rel="tag"># Zookeeper</a>
+              <a href="/tags/%E6%96%87%E6%A1%A3%E7%BF%BB%E8%AF%91/" rel="tag"># 文档翻译</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/01/07/ZooKeeper%E7%A8%8B%E5%BA%8F%E5%91%98%E6%8C%87%E5%8D%97/" rel="prev" title="ZooKeeper程序员指南">
+      <i class="fa fa-chevron-left"></i> ZooKeeper程序员指南
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/01/10/ZooKeeper%E5%9F%BA%E7%A1%80%E6%95%99%E7%A8%8B/" rel="next" title="ZooKeeper基础教程">
+      ZooKeeper基础教程 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+        </div>
+        
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Liujialong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

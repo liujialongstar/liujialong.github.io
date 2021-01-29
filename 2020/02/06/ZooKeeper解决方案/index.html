@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"liujialongstar.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.3","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="在本文中, 你将发现使用Zookeeper实现高阶功能的指南. 所有这些都可以很方便的在客户端实现, 并且不需要ZooKeeper的特殊支持. 社区未来会将这些便利集成在客户端库中, 以方便使用并鼓励标准化. 关于ZooKeeper, 最有趣的一件事就是, 即使ZooKeeper使用异步通知, 你依然可以使用它构建同步的一致性基元, 例如队列和锁. 正如你所看到的, 因为ZooKeeper对更新规">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ZooKeeper解决方案">
+<meta property="og:url" content="https://liujialongstar.github.io/2020/02/06/ZooKeeper%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/index.html">
+<meta property="og:site_name" content="Longlong">
+<meta property="og:description" content="在本文中, 你将发现使用Zookeeper实现高阶功能的指南. 所有这些都可以很方便的在客户端实现, 并且不需要ZooKeeper的特殊支持. 社区未来会将这些便利集成在客户端库中, 以方便使用并鼓励标准化. 关于ZooKeeper, 最有趣的一件事就是, 即使ZooKeeper使用异步通知, 你依然可以使用它构建同步的一致性基元, 例如队列和锁. 正如你所看到的, 因为ZooKeeper对更新规">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-02-06T05:12:41.000Z">
+<meta property="article:modified_time" content="2021-01-29T02:21:56.796Z">
+<meta property="article:author" content="Liujialong">
+<meta property="article:tag" content="Zookeeper">
+<meta property="article:tag" content="文档翻译">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://liujialongstar.github.io/2020/02/06/ZooKeeper%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>ZooKeeper解决方案 | Longlong</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <main class="main">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+        <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longlong</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">A Rookie Programmer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#关于错误处理的重要提示"><span class="nav-number">1.</span> <span class="nav-text">关于错误处理的重要提示</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#命名服务-配置-组成员"><span class="nav-number">2.</span> <span class="nav-text">命名服务, 配置, 组成员</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#栅栏"><span class="nav-number">3.</span> <span class="nav-text">栅栏</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#双栅栏"><span class="nav-number">3.1.</span> <span class="nav-text">双栅栏</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#队列"><span class="nav-number">4.</span> <span class="nav-text">队列</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#优先队列"><span class="nav-number">4.1.</span> <span class="nav-text">优先队列</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#锁"><span class="nav-number">5.</span> <span class="nav-text">锁</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#可恢复错误和GUID"><span class="nav-number">5.1.</span> <span class="nav-text">可恢复错误和GUID</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#共享锁"><span class="nav-number">5.2.</span> <span class="nav-text">共享锁</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#可撤销共享锁"><span class="nav-number">5.3.</span> <span class="nav-text">可撤销共享锁</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Liujialong</p>
+  <div class="site-description" itemprop="description">My records for programming and life</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </header>
+
+      
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div id="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+      <div class="main-inner">
+        
+
+        <div class="content post posts-expand">
+          
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://liujialongstar.github.io/2020/02/06/ZooKeeper%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Liujialong">
+      <meta itemprop="description" content="My records for programming and life">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longlong">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ZooKeeper解决方案
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-02-06 13:12:41" itemprop="dateCreated datePublished" datetime="2020-02-06T13:12:41+08:00">2020-02-06</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-01-29 10:21:56" itemprop="dateModified" datetime="2021-01-29T10:21:56+08:00">2021-01-29</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Zookeeper/" itemprop="url" rel="index"><span itemprop="name">Zookeeper</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在本文中, 你将发现使用Zookeeper实现高阶功能的指南. 所有这些都可以很方便的在客户端实现, 并且不需要ZooKeeper的特殊支持. 社区未来会将这些便利集成在客户端库中, 以方便使用并鼓励标准化.</p>
+<p>关于ZooKeeper, 最有趣的一件事就是, 即使ZooKeeper使用异步通知, 你依然可以使用它构建同步的一致性基元, 例如队列和锁. 正如你所看到的, 因为ZooKeeper对更新规定了一个整体顺序, 并且拥有公开这一顺序的机制, 所有构建同步操作时有可能的.</p>
+<p>注意, 接下来使用的方案视图使用最佳实践. 实际上, 这些方案避免使用轮询, 定时器或者任何会产生羊群效应, 进而引发流量爆发和限制扩展的方法.</p>
+<p>还有许多有用的方法并未在此处展示, 例如可撤销读写优先锁. 这里提到的一些结构, 比如锁, 实际上只是说明了适当的点. 你甚至可以发现其他更特殊的结构来表现同样的方法, 例如事件处理器或者队列. 通常, 这里的例子只为引发思考.</p>
+<a id="more"></a>
+
+<h3 id="关于错误处理的重要提示"><a href="#关于错误处理的重要提示" class="headerlink" title="关于错误处理的重要提示"></a>关于错误处理的重要提示</h3><p>当实现这些方案时, 你必须处理可撤销的异常. 实际上, 一些方案使用连续的临时节点. 当创建一个连续的临时节点时, 当<code>create()</code>成功在服务器创建节点, 但服务器在向客户端返回节点名之前宕机, 就会产生一个错误. 当客户端重新连接时, 会话仍然有效, 因此, 这个节点不会被移除. 这意味着客户端很难直到它的节点是否创建了. 下面的方案包含了处理这个需错误的措施.</p>
+<h3 id="命名服务-配置-组成员"><a href="#命名服务-配置-组成员" class="headerlink" title="命名服务, 配置, 组成员"></a>命名服务, 配置, 组成员</h3><p>命名服务和配置是ZooKeeper的两个主要应用. 这两个功能由ZooKeeper API直接提供.</p>
+<p>另一个ZooKeeper直接提供的功能是组成员. 这里, 组由一个节点表示. 组成员在这个组节点下创建临时节点. 当ZooKeeper探测到成员节点的异常失败时, 将移除这个节点.</p>
+<h3 id="栅栏"><a href="#栅栏" class="headerlink" title="栅栏"></a>栅栏</h3><p>分布式系统使用栅栏阻塞一组节点进程, 直到条件达成, 所有被阻塞的进程才会被处理. ZooKeeper通过指定一个栅栏节点实现栅栏功能. 下面是伪代码:</p>
+<ol>
+<li>客户端对栅栏节点调用<code>exists()</code>方法, <em>watch</em> 设置为 <em>true</em>.</li>
+<li>如果<code>exists()</code>返回 <em>false</em>, 则栅栏不存在, 客户端继续执行.</li>
+<li>否则, 如果<code>exists()</code>返回 <em>true</em>, 客户端等待栅栏节点的监听事件.</li>
+<li>当监听事件触发, 客户端再次调用<code>exists()</code>, 再次重复上述过程.</li>
+</ol>
+<h4 id="双栅栏"><a href="#双栅栏" class="headerlink" title="双栅栏"></a>双栅栏</h4><p>双栅栏允许客户端在一次计算过程中同时开始, 同时结束. 当有足够的进程加入栅栏后, 各个进程开始计算过程; 当它们都结束计算之后, 离开栅栏. 下面的方案展示了如何使用ZooKeeper节点实现栅栏.</p>
+<p>下面的伪代码将栅栏节点记作<em>b</em>. 每个客户端进程<em>p</em>在进入栅栏是注册, 在准备离开栅栏时取消注册. 通过下面的<strong>Enter</strong>步骤注册在栅栏节点上的客户端进程, 将等待<em>x</em>个客户端进程注册之后才能开始运算.(<em>x</em>由系统设定)</p>
+<table>
+<thead>
+<tr>
+<th><strong>Enter</strong></th>
+<th><strong>Leave</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1. 创建名称 <em>n = b+ “/“ + p</em></td>
+<td>1. <strong>L = getChildren(b, false)</strong></td>
+</tr>
+<tr>
+<td>2. 设置监听器: <strong>exists(b + “/ready”, true)</strong></td>
+<td>2. 如果没有子节点, 退出</td>
+</tr>
+<tr>
+<td>3. 创建子节点: <strong>create(n, EPHEMERAL)</strong></td>
+<td>3. 如果<em>p</em>时L中唯一的进程节点, delete(n)并退出</td>
+</tr>
+<tr>
+<td>4. <strong>L = getChildren(b, false)</strong></td>
+<td>4. 如果<em>p</em>时L中最低的进程节点, 等待L中最高的进程节点</td>
+</tr>
+<tr>
+<td>5. 如果L中的子节点数量小于<em>x</em>, 等待监听事件</td>
+<td>5. 否则, 如果节点存在则执行<strong>delete(n)</strong>, 并等待L中的最低进程节点</td>
+</tr>
+<tr>
+<td>6. 否则执行 <strong>create(b + “/ready”, REGULAR)</strong></td>
+<td>6. 继续执行1</td>
+</tr>
+</tbody></table>
+<p>在进入栅栏时, 所有的进程都监听一个ready节点, 并且创建一个临时节点作为栅栏节点的子节点. 除了最后一个进入栅栏的节点都将等待reday节点达成第5条件. 创建第x个节点的进程, 即最后一个进程, 将发现字节点列表中的x个节点, 并且创建ready节点, 唤醒其他进程. 注意等待中的进程只有在退出时才会被唤醒, 所以等待是高效的.</p>
+<p>在退出时, 你不能使用一个类似<em>ready</em>的标志, 因为你在监听其它节点的离开. 通过使用临时节点, 那些进入栅栏后失败的进程不会阻碍成功的进程离开. 当这些进程准备离开时, 它们需要删除自己的进程节点并且等待其他进程做同样的事.</p>
+<p>当<em>b</em>没有子节点时, 这些进程就会离开. 然而, 作为一个提高效率的方法, 你可以使用最低级的进程节点作为标识. 其它所有的进程都可以监听这个最低级的进程是否离开, 这个最低级的进程监听其他节点是否离开. 这意味着, 除了最后一个节点, 每次有节点被删除都只会唤醒一个进程. 当最后一个节点被删除, 将唤醒其他所有的进程.</p>
+<h3 id="队列"><a href="#队列" class="headerlink" title="队列"></a>队列</h3><p>分布式队列是一种普遍的数据结构. 要在ZooKeeper中实现分布式队列, 首先要指定一个节点持有队列, 即队列节点. 分布式客户端通过调用<em>create()<em>方法来将数据放入队列. *create()</em>方法接受一个以”queue-“开头的路径作为参数, 并且<em>sequence</em>和<em>ephemeral</em>的标识设置为<strong>true</strong>. 因为<em>sequence</em>标识设置为true, 新的路径名称的格式为*path-to-queue-node/queue-X</em>, 其中<em>X</em>时单调递增数字. 想要从队列中移除数据的客户端将对队列节点调用<em>getChildren()<em>方法, 并将监听标识</em>watch<em>设置为true, 并开始处理X值最小的节点. 在释放前一个</em>getChildren()<em>获取的列表之前, 客户端不需要再次调用</em>getChildren()</em>. 如果队列节点中没有子节点, 客户端将等待监听通知, 然后再次检查队列.</p>
+<h4 id="优先队列"><a href="#优先队列" class="headerlink" title="优先队列"></a>优先队列</h4><p>只需要对上述普通队列方案进行两个简单的改动, 就可以先优先级队列. 首先, 添加一个队列, 路径名称为 <em>queue-YY</em>, 其中, YY代表元素的优先级, YY数字越小, 优先级越高. 其次, 当从队列中移除元素, 客户端使用一个始终保持最新的子节点列表, 这个列表意味着, 当队列节点的监听通知触发时, 客户端之前获取的节点将失效.</p>
+<h3 id="锁"><a href="#锁" class="headerlink" title="锁"></a>锁</h3><p>完备的分布式锁是全局同步的. 这意味着再任何即时快照中, 不会有两个客户端同时持有一个锁. 这可以用ZooKeeper实现, 就像实现优先队列一样, 先定义一个锁节点.</p>
+<p>想要获取锁的客户端需要按以下步骤执行:</p>
+<ol>
+<li>调用<strong>create()</strong>方法, 传入参数<em>locknode/guid-lock-</em>作为路径名, <em>sequence</em>和<em>ephemeral</em>标识集合. 其中<em>guid</em>在create()的结果丢失时是必需的. 参见下面的<a href="#可恢复错误和GUID">提示</a>.</li>
+<li>对锁节点调用<strong>getChildren()</strong>方法, 不必设置监听标识(这对避免羊群效应非常重要).</li>
+<li>如果第一步创建的路径名称拥有最小的序号后缀, 这个客户端持有锁, 并退出<em>协议</em>.</li>
+<li>客户端对下一个最小序号的锁目录调用<strong>exists()</strong>方法并设置监听标识.</li>
+<li>如果<strong>exists()</strong>返回null, 跳到步骤<strong>2</strong>. 否则, 在跳转到步骤<strong>2</strong>之前等待来自上一步中的路径名的通知.</li>
+</ol>
+<p><em>解锁协议</em>非常简单: 想要释放锁的客户端只需要删除其在步骤<strong>1</strong>中创建的节点.</p>
+<p>下面是一些需要注意的事项:</p>
+<ul>
+<li>因为每个节点只被指定的一个客户端监听, 所以单个节点的删除, 只会唤醒一个客户端. 通过这种方法, 可以避免羊群效应.</li>
+<li>没有轮询或超时.</li>
+<li>使用这种方式实现锁, 发现锁竞争的总量, 中断锁, 调试锁问题等等变得很容易.</li>
+</ul>
+<h4 id="可恢复错误和GUID"><a href="#可恢复错误和GUID" class="headerlink" title="可恢复错误和GUID"></a>可恢复错误和GUID</h4><ul>
+<li>如果在调用<strong>create()</strong>方法时发生了可恢复错误, 客户端应该调用<strong>getChildren()</strong>方法, 并检查路节点的径名中是否包含<em>guid</em>. 这样做可以处理<em>create()</em>创建节点成功, 但在返回新节点的名称前, 服务器宕机的情形.</li>
+</ul>
+<h4 id="共享锁"><a href="#共享锁" class="headerlink" title="共享锁"></a>共享锁</h4><p>通过对锁协议进行一些改变, 即可实现共享锁:</p>
+<table>
+<thead>
+<tr>
+<th>获取读锁</th>
+<th>获取写锁</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1. 调用<strong>create()</strong>方法创建一个路径名为<em>guid-/read-</em>的节点.这个节点将在之后作为锁节点使用. 确保对此节点设置了<em>sequence</em>和<em>ephemeral</em>标识.</td>
+<td>1. 调用<strong>create()</strong>方法, 创建一个名为<em>guid-/write-</em>的节点. 这是后面讲到的锁节点. 确保对此节点设置了<em>sequence</em>和<em>ephemeral</em>标识.</td>
+</tr>
+<tr>
+<td>2. 对锁节点调用<strong>getChildren()</strong>方法, 对锁节点调用<strong>getChildren()</strong>方法, 不必设置监听标识(这对避免羊群效应非常重要).</td>
+<td>2. 对锁节点调用<strong>getChildren()</strong>方法, 对锁节点调用<strong>getChildren()</strong>方法, 不必设置监听标识(这对避免羊群效应非常重要).</td>
+</tr>
+<tr>
+<td>3. 如果不存在以<em>write-</em>开头的子节点, 并且存在比步骤<strong>1</strong>中创建的节点更小的序号, 客户端将持有锁, 并退出协议</td>
+<td>3. 如果没有比步骤<strong>1</strong>中创建的节点更小的序号, 客户端持有节点, 并退出协议</td>
+</tr>
+<tr>
+<td>4. 否则, 对锁目录中以<em>write-</em>开头并拥有第二小序号的节点调用<strong>exists()</strong>方法, 并设置监听</td>
+<td>4. 对拥有第二小序号的节点调用<strong>exists()</strong>方法, 并设置监听</td>
+</tr>
+<tr>
+<td>5. 如果<strong>exists()</strong>方法返回<em>false</em>, 跳转到步骤<strong>2</strong></td>
+<td>5. 如果<strong>exists()</strong>方法返回<em>false</em>, 跳转到步骤<strong>2</strong>. 否则, 在跳转到步骤<strong>2</strong>之前等待来自上一步中的路径名的通知.</td>
+</tr>
+<tr>
+<td>6. 否则, 在跳转到步骤<strong>2</strong>之前等待来自上一步中的路径名的通知.</td>
+<td></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>注意:</p>
+<ul>
+<li>这个方案可能会产生羊群效应: 当有很多客户端等待一个读锁, 并且拥有最小序号的<em>write_</em>节点被删除时, 这些节点几乎同时会收到通知. 实际上, 这是有效的行为: 因为当这些等待的读客户端持有锁时, 它们都应该被释放. 羊群效应是指: 只有一个或少数机器可以继续运行时, 释放羊群.</li>
+</ul>
+</blockquote>
+<h4 id="可撤销共享锁"><a href="#可撤销共享锁" class="headerlink" title="可撤销共享锁"></a>可撤销共享锁</h4><p>对共享锁协议进行微小的改动, 就可以实现可撤销的共享锁:</p>
+<p>在步骤<strong>1</strong>的读与写两个协议中, 在调用<strong>create()</strong>方法后, 立刻调用<strong>getData()</strong>方法, 并设置监听. 如果客户端随后接收到它在步骤<strong>1</strong>中创建的节点的通知, 就对节点再次调用<strong>getData()</strong>, 并设置监听. 并且在返回的结果中查找字符串<em>unlock</em>, 这是客户端必须释放锁的信号. 这是因为, 根据这一共享锁协议, 你可以通过对锁节点调用<strong>setData()</strong>方法, 向节点写入<em>unlock</em>, 来请求持有锁的客户端放弃锁.</p>
+<p>注意, 这个协议需要锁持有者同意释放锁. 这个许可非常重要, 尤其是当锁持有者需要在释放锁之前进行一些处理的时候. 当然, 你可以规定在你的协议中, 一段时间后, 锁持有者没有删除锁节点时, 废除者可以删除锁节点.</p>
+<blockquote>
+<p>本文翻译自<a href="https://zookeeper.apache.org/doc/r3.5.6/recipes.html" target="_blank" rel="noopener">ZooKeeper Recipes and Solutions</a>, 原文还有事务和选举没有翻译, 可自行查阅.</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Zookeeper/" rel="tag"># Zookeeper</a>
+              <a href="/tags/%E6%96%87%E6%A1%A3%E7%BF%BB%E8%AF%91/" rel="tag"># 文档翻译</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/01/10/ZooKeeper%E5%9F%BA%E7%A1%80%E6%95%99%E7%A8%8B/" rel="prev" title="ZooKeeper基础教程">
+      <i class="fa fa-chevron-left"></i> ZooKeeper基础教程
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/18/Dcoker%E5%AE%89%E8%A3%85/" rel="next" title="Dcoker安装">
+      Dcoker安装 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+        </div>
+        
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Liujialong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

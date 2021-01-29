@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"liujialongstar.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.3","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="简介本文档是一份写给打算利用Zookeeper协调服务创建分布式应用的程序员的指南. 文档包括概念和实用信息. 指南前四部分展示了对多种Zookeeper概念的高级别讨论. 这对于理解Zookeeper的工作机制, 以及如何使用Zookeeper十分必要. 指南不包括源码, 但它假定你熟悉与分布式计算相关的问题.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ZooKeeper程序员指南">
+<meta property="og:url" content="https://liujialongstar.github.io/2020/01/07/ZooKeeper%E7%A8%8B%E5%BA%8F%E5%91%98%E6%8C%87%E5%8D%97/index.html">
+<meta property="og:site_name" content="Longlong">
+<meta property="og:description" content="简介本文档是一份写给打算利用Zookeeper协调服务创建分布式应用的程序员的指南. 文档包括概念和实用信息. 指南前四部分展示了对多种Zookeeper概念的高级别讨论. 这对于理解Zookeeper的工作机制, 以及如何使用Zookeeper十分必要. 指南不包括源码, 但它假定你熟悉与分布式计算相关的问题.">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://liujialongstar.github.io/img/zookeeper/state_dia.jpg">
+<meta property="article:published_time" content="2020-01-07T08:48:53.000Z">
+<meta property="article:modified_time" content="2021-01-29T02:21:56.796Z">
+<meta property="article:author" content="Liujialong">
+<meta property="article:tag" content="Zookeeper">
+<meta property="article:tag" content="文档翻译">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://liujialongstar.github.io/img/zookeeper/state_dia.jpg">
+
+<link rel="canonical" href="https://liujialongstar.github.io/2020/01/07/ZooKeeper%E7%A8%8B%E5%BA%8F%E5%91%98%E6%8C%87%E5%8D%97/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>ZooKeeper程序员指南 | Longlong</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <main class="main">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+        <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longlong</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">A Rookie Programmer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#简介"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Zookeeper数据模型"><span class="nav-number">2.</span> <span class="nav-text">Zookeeper数据模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ZNodes"><span class="nav-number">2.1.</span> <span class="nav-text">ZNodes</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#监听"><span class="nav-number">2.1.1.</span> <span class="nav-text">监听</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#数据访问"><span class="nav-number">2.1.2.</span> <span class="nav-text">数据访问</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#临时节点"><span class="nav-number">2.1.3.</span> <span class="nav-text">临时节点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#顺序节点-–-唯一名称"><span class="nav-number">2.1.4.</span> <span class="nav-text">顺序节点 – 唯一名称</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Zookeeper中的时间"><span class="nav-number">2.1.5.</span> <span class="nav-text">Zookeeper中的时间</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Zookeeper统计结构"><span class="nav-number">2.1.6.</span> <span class="nav-text">Zookeeper统计结构</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Zookeeper会话"><span class="nav-number">3.</span> <span class="nav-text">Zookeeper会话</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Zookeeper监听机制"><span class="nav-number">4.</span> <span class="nav-text">Zookeeper监听机制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#监听器的语义"><span class="nav-number">4.1.</span> <span class="nav-text">监听器的语义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#移除监听器"><span class="nav-number">4.2.</span> <span class="nav-text">移除监听器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#对监听器的保证"><span class="nav-number">4.3.</span> <span class="nav-text">对监听器的保证</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#访问控制列表-ACL"><span class="nav-number">5.</span> <span class="nav-text">访问控制列表: ACL</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ACL权限"><span class="nav-number">5.1.</span> <span class="nav-text">ACL权限</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#内建ACL方案"><span class="nav-number">5.1.1.</span> <span class="nav-text">内建ACL方案</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#插拔式的Zookeeper认证"><span class="nav-number">6.</span> <span class="nav-text">插拔式的Zookeeper认证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一致性保证"><span class="nav-number">7.</span> <span class="nav-text">一致性保证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#绑定"><span class="nav-number">8.</span> <span class="nav-text">绑定</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Java语言绑定"><span class="nav-number">8.1.</span> <span class="nav-text">Java语言绑定</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#客户端配置参数"><span class="nav-number">8.1.1.</span> <span class="nav-text">客户端配置参数</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基石-Zookeeper操作指南"><span class="nav-number">9.</span> <span class="nav-text">基石:Zookeeper操作指南</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#编程架构"><span class="nav-number">10.</span> <span class="nav-text">编程架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#陷阱-常见故障分析及处理"><span class="nav-number">11.</span> <span class="nav-text">陷阱:常见故障分析及处理</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Liujialong</p>
+  <div class="site-description" itemprop="description">My records for programming and life</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </header>
+
+      
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div id="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+      <div class="main-inner">
+        
+
+        <div class="content post posts-expand">
+          
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://liujialongstar.github.io/2020/01/07/ZooKeeper%E7%A8%8B%E5%BA%8F%E5%91%98%E6%8C%87%E5%8D%97/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Liujialong">
+      <meta itemprop="description" content="My records for programming and life">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longlong">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ZooKeeper程序员指南
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-01-07 16:48:53" itemprop="dateCreated datePublished" datetime="2020-01-07T16:48:53+08:00">2020-01-07</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-01-29 10:21:56" itemprop="dateModified" datetime="2021-01-29T10:21:56+08:00">2021-01-29</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Zookeeper/" itemprop="url" rel="index"><span itemprop="name">Zookeeper</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>本文档是一份写给打算利用Zookeeper协调服务创建分布式应用的程序员的指南. 文档包括概念和实用信息.</p>
+<p>指南前四部分展示了对多种Zookeeper概念的高级别讨论. 这对于理解Zookeeper的工作机制, 以及如何使用Zookeeper十分必要. 指南不包括源码, 但它假定你熟悉与分布式计算相关的问题. </p>
+<a id="more"></a>
+
+<p>前四部分分别是:</p>
+<ul>
+<li><a href="#Zookeeper数据模型">Zookeeper数据模型</a></li>
+<li><a href="#Zookeeper会话">Zookeeper会话</a></li>
+<li><a href="#Zookeeper监听机制">Zookeeper监听机制</a></li>
+<li><a href="#一致性保证">一致性保证</a></li>
+</ul>
+<p>接下来的四部分提供实际的编程信息. 它们是:</p>
+<ul>
+<li><a href="#基石:Zookeeper操作指南">基石:Zookeeper操作指南</a></li>
+<li><a href="#绑定">绑定</a></li>
+<li><a href="#编程架构">编程架构</a></li>
+<li><a href="#陷阱:常见故障分析及处理">陷阱:常见故障分析及处理</a></li>
+</ul>
+<p>本文档的大部分内容都可以作为独立的参考资料. 但是, 在开始你的第一个Zookeeper应用前, 请至少阅读 <a href="#Zookeeper数据模型">Zookeeper数据模型</a> 和 <a href="#基石:Zookeeper操作指南">Zookeeper基本操作</a> 中的内容. 同样的, <a href="#编程架构">一些简单的例子</a>有助于你对Zookeeper客户端应用的基本架构的理解.</p>
+<h2 id="Zookeeper数据模型"><a href="#Zookeeper数据模型" class="headerlink" title="Zookeeper数据模型"></a>Zookeeper数据模型</h2><p>Zookeeper拥有一个分层的命名空间, 类似于文件系统. 唯一的区别是, 命名空间中的每个节点, 既可以有绑定的值, 同时也可以有子节点. 就好像文件系统中, 一个文件对象既可以是文件, 同时也可以是目录. 指向节点的路径, 表述为标准的由斜线<code>/</code>分割的绝对路径; 不存在相对路径. 符合下列限制的unicode字符都可以用于路径:</p>
+<ul>
+<li>路径名称不能包含空字符 <code>\u0000</code>. 这在C中会引发问题.</li>
+<li>下列字符不能使用, 因为它们不能很好的展示, 或者引发混乱: <code>\u0001</code> - <code>\u001F</code>, <code>\u007F</code> - <code>\u009F</code>.</li>
+<li>下列字符不允许使用: <code>\ud800</code> - <code>uF8FF</code>, <code>\uFFF0</code> - <code>\uFFFF</code>.</li>
+<li><code>.</code>可以作为一段路径的一部分, 但不允许单独用于一段路径, 因为<code>.</code>和<code>..</code>代表相对路径, 而Zookeeper中不存在相对路径.</li>
+<li><code>zookeeper</code> 为保留字段.</li>
+</ul>
+<h3 id="ZNodes"><a href="#ZNodes" class="headerlink" title="ZNodes"></a>ZNodes</h3><p>Zookeeper树中的每个节点被称为一个znode. Znodes包含一个统计结构, 这个结构包含数据变更和ACL权限变更的版本号. 统计结构同样包含时间戳. 版本号和时间戳, 使Zookeeper具备验证缓存和协调更新的能力. 每当一个znode的数据发生改变, 版本号增加. 例如: 当一个客户端获取数据是, 它同样获取到数据的版本. 当一个客户端更新或删除数据, 它必须提供它改变的数据的版本. 如果它提供的版本无法匹配数据的实际版本, 变更操作将会失败.</p>
+<blockquote>
+<p>在分布式应用引擎中, <code>node</code>一词可以指泛型主机,服务器,集群成员,客户端进程等等.但是在Zookeeper文档中, <code>znodes</code> 指数据节点, <code>Servers</code>指组成Zookeeper服务的机器; <code>quorum peers</code>指集群中的服务器; <code>client</code>指使用Zookeeper服务的主机或进程.</p>
+</blockquote>
+<p>Znodes是程序员接触的主要概念. 它们有以下几个特点:</p>
+<h4 id="监听"><a href="#监听" class="headerlink" title="监听"></a>监听</h4><p>客户端可以为znodes设置监听. znode的改变会触发一个监听, 然后清除这个监听.当一个监听被处罚, Zookeeper想客户端发送一个通知. 更多信息请参考<a href="#Zookeeper监听机制">Zookeeper监听机制</a></p>
+<h4 id="数据访问"><a href="#数据访问" class="headerlink" title="数据访问"></a>数据访问</h4><p>命名空间中, 每个节点存储的数据的读取和写入都是原子性的. 读取获取节点中所有的数据, 写入将替换这一数据. 每个节点都有严格的访问控制列表.</p>
+<p>Zookeeper并非设计成一个通用的数据库或者大对象存储. 相反, 它管理协调数据. 数据以配置,状态信息,集合点等形式存储. 各种类型的协调数据的普遍特点就是它们相对较小: 以千字节为标准. Zookeeper客户端和服务器有一套检查机制来保证znode中存储的数据小于1M, 而且数据的平均大小要比1M小的多. 对大容量数据的操作, 因为要花费额外的时间传输数据并写入存储介质, 会导致该操作比其他操作花费更多的时间, 进而影响一些操作的延迟. 如果一定要存储大数据, 通常的做法是使用大容量存储系统来存储这一数据, 例如<code>NFS</code>或<code>HDFS</code>, 然后再Zookeeper中保存指向数据存储位置的指针.</p>
+<h4 id="临时节点"><a href="#临时节点" class="headerlink" title="临时节点"></a>临时节点</h4><p>Zookeeper同样有临时节点的概念. 这些znodes随着会话的建立而创建, 随着会话的结束而销毁. 因此, 临时节点不允许存在子节点.</p>
+<h4 id="顺序节点-–-唯一名称"><a href="#顺序节点-–-唯一名称" class="headerlink" title="顺序节点 – 唯一名称"></a>顺序节点 – 唯一名称</h4><p>当创建一个节点时, 你可以请求Zookeeper向路径的末尾添加一个单调递增的计数器.计数器对父节点时唯一的. 计数器的形式为 <code>%010d</code>, 即用0补位的10位10进制数. 计数器的最大值为2147483647.</p>
+<blockquote>
+<p>这里还有两个节点概念, Container Nodes 和 TTL Nodes. 3.5.3版本添加的新概念. 详细内容请参考英文文档</p>
+</blockquote>
+<h4 id="Zookeeper中的时间"><a href="#Zookeeper中的时间" class="headerlink" title="Zookeeper中的时间"></a>Zookeeper中的时间</h4><p>Zookeeper通过多种方式跟踪时间:</p>
+<ul>
+<li><strong>Zxid</strong>: 每一次Zookeeper状态改变都将接收一个<em>zxid</em>(Zookeeper事务id)形式的标记. 这暴露了所有对Zookeeper变更的总顺序. 每次变更都有一个唯一的zxid, 如果zxid1小于zxid2, zxid1将再zxid2之前被执行.</li>
+<li><strong>Version numbers</strong>: 每一次对节点的变更都将引发节点某一版本号的增长. 节点的三个版本号分别是, <em>version</em> 数据变更版本号, <em>cversion</em> 子节点变更版本号, <em>aversion</em> ACL变更版本号.</li>
+<li><strong>Ticks</strong>: 在Zookeeper集群中, 服务器使用<em>ticks</em>定义事件的时间, 例如状态上传, 会话超时, 连接超时等等. <em>tick time</em>只间接通过最小会话超时时间(<em>tick time</em>的两倍)暴露; 如果客户端请求的会话超时时间小于最小会话超时时间, 服务器将告知客户端会话超时时间实际上就是最小会话超时时间.</li>
+<li><strong>Real time</strong>: 除了znode创建和修改是存入stat结构的时间戳, Zookeeper不适用真实时间或时钟时间.</li>
+</ul>
+<h4 id="Zookeeper统计结构"><a href="#Zookeeper统计结构" class="headerlink" title="Zookeeper统计结构"></a>Zookeeper统计结构</h4><p>Zookeeper统计结构由以下字段组成:</p>
+<ul>
+<li><strong>czxid</strong>: 记录节点创建时的zxid</li>
+<li><strong>mzxid</strong>: 记录节点最后修改的zxid</li>
+<li><strong>pzxid</strong>: 记录最后对子节点修改的zxid</li>
+<li><strong>ctime</strong>: 节点创建时的时间戳</li>
+<li><strong>mtime</strong>: 节点修改时的时间戳</li>
+<li><strong>version</strong>: 节点数据变更的版本号</li>
+<li><strong>cversion</strong>: 节点的子节点变更的版本号</li>
+<li><strong>aversion</strong>: 节点的ACL权限变更的版本号</li>
+<li><strong>ephemeralOwner</strong>: 临时节点所有者的会话id, 对于非临时节点, 该值为0</li>
+<li><strong>dataLength</strong>: 节点的数据的长度</li>
+<li><strong>numChildren</strong>: 节点的子节点数量</li>
+</ul>
+<h2 id="Zookeeper会话"><a href="#Zookeeper会话" class="headerlink" title="Zookeeper会话"></a>Zookeeper会话</h2><p>Zookeeper通过该创建一个连接服务的句柄, 建立与Zookeeper服务会话. 一旦创建句柄, 句柄处于CONNECTING状态, 客户端将试图连接组成Zookeeper服务的一台服务器, 连接成功后, 句柄将变为CONNECTED状态. 一般操作中, 客户端句柄将处于这两个状态之一. 如果一个不可恢复的错误发生, 例如会话过期或认证失败, 或应用显性的关闭句柄, 此时句柄将变为CLOSED状态. 下图展示了客户端的状态改变:</p>
+<p><img src="/img/zookeeper/state_dia.jpg" alt="状态改变"></p>
+<p>要创建客户端会话,应用代码必须提供一个连接字符串, 该字符串包含由逗号分隔的<code>主机:端口</code>组成的列表(127.0.0.1:3000,127.0.0.1:3001). 客户端将选择任意服务器并试图连接. 如果连接失败, 或因为某些原因从服务器断开连接, 客户端将自动连接列表中的下一个服务器, 直到连接重新建立.</p>
+<p>当客户端获得连接到Zookeeper服务的句柄, Zookeeper将创建一个会话, 表现为分配给客户端的64位数字. 如果客户端连接到另一个Zookeeper服务器, 会话id将作为连线交握的一部分被发送. 服务器为会话id创建一个任何Zookeeper服务器都可以校验的密码作为安全措施. 当客户端建立会话时, 密码将和会话id一起发送到客户端. 当客户端和新的服务器建立会话时, 密码和会话id将发送到新服务器.</p>
+<p>Zookeeper客户端创建会话时调用的参数之一是会话超时时间(以毫秒为单位). 客户端发送一个请求超时时间, 服务器响应一个它能给客户端的超时时间. 超时时间最小为tickTime的2倍,最大为20倍. Zookeeper客户端API允许访问这个可协商的超时时间.</p>
+<p>当客户端(会话)成为ZK服务集群的分区, 他将在会话创建期间搜索指定的服务器列表. 最终, 当客户端和至少一个服务器重新建立连接后, 会话将再次转变为<code>connected</code>状态(如果在超时时间内重新连接), 或者转杯为<code>expired</code>状态(如果在超过超时时间后连接). 不建议为断开的连接创建新的会话对象. ZK客户端将为你处理重连. 特别是我们在客户端内置处理类似”羊群效应”等事件. 只有当你被通知会话过期才创建新的会话.</p>
+<p>会话过期由Zookeeper集群管理, 而不是客户端. 当ZK客户端与集群建立会话连接, 集群提供一个<code>timeout</code>值. 这个值被集群用于决定什么时候会话过期. 当集群无法在指定的会话过期时间内听到客户端(如心跳), 会话将会过期. 当会话过期, 集群将删除所有由这个会话创建的临时节点, 并立刻将这一变更通知所有已连接的客户端. 此时, 会话过期的客户端仍和集群断开连接, 直到它重新和集群建立连接, 否则它不会获得任何通知. </p>
+<p>创建会话时调用的另一个参数是默认监听器. 当客户端发生状态变更时, 监听器将被通知. 例如, 如果客户端与服务器断开连接,或者客户端会话过期等等, 客户端将被通知. 监听器的初始状态应该是<code>disconnected</code>. 当建立新连接时, 发送给监听器的第一个事件往往是会话连接事件.</p>
+<p>客户端发送请求时, 会话保持存活. 会话空闲一段时间后将会超时, 此时客户端将发送一个<code>PING</code>请求, 保持会话存活. <code>PING</code>请求不仅让服务器知道客户端仍然活跃, 同时让客户端验证它到服务器的简介仍然活跃. <code>PING</code>发送的事件要足够保守, 既要保证合理的事件来检测死链接并连接新的服务器.</p>
+<h2 id="Zookeeper监听机制"><a href="#Zookeeper监听机制" class="headerlink" title="Zookeeper监听机制"></a>Zookeeper监听机制</h2><p>Zookeeper中所有读取操作 - <code>getData()</code>, <code>getChildren()</code>, <code>exists()</code> - 都可以选择设置一个监听器作为副作用. 这是监听的定义: 监听事件是一次性触发的, 发送到设置监听的客户端的, 当被设置监听的数据变更时发生的事件.这段定义中有三个关键点:</p>
+<ul>
+<li>一次性触发: 当数据变更时, 监听事件将发送到客户端. 例如, 如果客户端执行<code>getData(&quot;/znode1&quot;, true)</code>, 稍后/znode1的数据改变或删除了, 客户端将受到一个关于/znode1的监听事件．如果/znode1再次改变, 监听事件不会发送, 除非客户端再次读取数据并设置一个新的监听.</li>
+<li>发送到客户端: 这意味着事件在发送到客户端的路上, 但是在变更操作的成功返回代码抵达引发变更的客户端之前, 事件不会到达其他客户端. 监听事件是异步发送到监听器的. Zookeeper提供一个秩序保证: 一个客户端在收到被监听节点的监听事件之前, 不会收到这个被监听节点的变更. 网络延迟或其他的影响可能会引发不同的客户端在不同的时间从变更收到监听事件并返回代码. 关键点在于不同客户端收到的一切都有一个一致的顺序.</li>
+<li>被设置监听的数据: 这指的是一个节点可以有不同的变更方式. 可以认为Zookeeper位置两份监视器列表: 数据监视器和子节点监视器. <code>getData()</code> 和<code>exists()</code> 设置数据点十七. <code>getChildren()</code> 设置子节点监视器. 或者可以认为监视器是根据返回的数据类型设置的. <code>getData()</code> 和<code>exists()</code>返回节点的数据的信息, <code>getChildren()</code> 返回一个子节点列表. 因此, <code>setData()</code> 将触发被设置的znode的数据监视器. <code>create()</code> 将触发一个对被创建的znode的数据监视器和一个对父znode的子节点监视器. <code>delete()</code> 将同时触发本节点的数据监视器和父节点的子节点监视器.</li>
+</ul>
+<p>监视器由客户端连接的服务器再本地维护. 这需要监视器是轻量级的以便于设置, 维护和分发. 当客户端连接到新的服务器, 监视器将会被任意会话事件触发. 当与服务器断开连接时, 客户端无法收到监听事件. 当客户端重新连接后, 之前注册的监听器将被重新注册, 并在需要的时候触发. 通常这一切的发生都是透明的. 再一种情形下, 监视器可能会丢失: 如果znode在断连期间创建并删除,针对尚未创建的znode的存在设置的监听将会丢失.</p>
+<h3 id="监听器的语义"><a href="#监听器的语义" class="headerlink" title="监听器的语义"></a>监听器的语义</h3><p>我们可以通过这三个读取Zookeeper状态的调用设置监听: exists, getData, getChildren. 接下来的列表描述了监听器可以触发的事件和开启监听的调用:</p>
+<ul>
+<li><strong>Created event</strong>: 通过调用exists开启.</li>
+<li><strong>Deleted event</strong>: 通过调用exists, getData 和 getChildren开启.</li>
+<li><strong>Changed event</strong>: 通过调用exists和getData开启.</li>
+<li><strong>Child event</strong>: 通过调用getChildren开启.</li>
+</ul>
+<h3 id="移除监听器"><a href="#移除监听器" class="headerlink" title="移除监听器"></a>移除监听器</h3><p>我们可以通过调用<code>removeWatches</code>移除注册在一个znode上的监听器. 同样的, 客户端即使没有连接服务器, 也可以通过设置<code>local flag</code>为<code>true</code> 来在本地移除监听器. 接下来的列表描述了监听器被成功移除后触发的事件:</p>
+<ul>
+<li><strong>Child Remove event</strong>: 通过调用getChildren设置的监听器.</li>
+<li><strong>Data Remove event</strong>: 通过调用exists或getData设置的监听器.</li>
+</ul>
+<h3 id="对监听器的保证"><a href="#对监听器的保证" class="headerlink" title="对监听器的保证"></a>对监听器的保证</h3><p>关于监听器, Zookeeper有这样的保证:</p>
+<ul>
+<li>监听器对其他事件, 监听器, 异步回应来说是顺序的. Zookeeper客户端库保证分发的一切都是有序的.</li>
+<li>客户端将在收到数据改变之前收到监听事件.</li>
+<li>Zookeeper服务看到的监听事件顺序对应于更新的顺序.</li>
+</ul>
+<h2 id="访问控制列表-ACL"><a href="#访问控制列表-ACL" class="headerlink" title="访问控制列表: ACL"></a>访问控制列表: ACL</h2><p>Zookeeper使用ACL来控制znode的访问权限. ACL的实现类似于UNIX文件访问权限: 它使用权限位来允许/禁止对节点的多种操作以及权限位的应用范围. 不同于标准的UNIX权限, znode不限于三个标准范围: 用户, 组和其他. Zookeeper没有节点拥有者的概念. ACL使用由id和与此id绑定的权限组成的集合.</p>
+<p>同样需要注意的是, ACL只属于指定的znode.也就是说权限并不会应用于子节点. 例如, 如果 <em>/app</em> 只能由ip为172.16.16.1的机器读取, 而 <em>/app/status</em> 不限定读取权限, 那么任何人都可以读取 <em>/app/status</em>; ACL无法递归应用.</p>
+<p>Zookeeper支持嵌入式权限认证方案. <em>Id</em> 指定使用 <code>scheme:expression</code> 的形式, 其中<em>scheme<em>为id对应的认证方案. 有效的表达式集合是由方案定义的. 例如, *ip:172.16.16.1</em>就是使用<em>ip</em>方案时的id, 而 *digest:username:password</em> 就是使用<em>digest</em>方案时的id.</p>
+<p>当一个客户端连接到Zookeeper并认证时, Zookeeper将与一个客户端对用的所有id关联到所有的客户端连接. 当一个客户端试图访问某一节点时, 这些id将被节点的ACL校验. ACL由 <em>(scheme:expression, perms)</em> 对组成. 例如, <em>(ip:12.22.0.0/16, READ)</em> 将给予任何由19.22开始的客户端<em>READ</em>权限.</p>
+<h3 id="ACL权限"><a href="#ACL权限" class="headerlink" title="ACL权限"></a>ACL权限</h3><p>Zookeeper支持下列权限:</p>
+<ul>
+<li><strong>CREATE</strong>: 创建子节点.</li>
+<li><strong>READ</strong>: 读取节点数据, 读取子节点列表.</li>
+<li><strong>WRITE</strong>: 写入数据.</li>
+<li><strong>DELETE</strong>: 删除一个子节点.</li>
+<li><strong>ADMIN</strong>: 设置权限.</li>
+</ul>
+<h4 id="内建ACL方案"><a href="#内建ACL方案" class="headerlink" title="内建ACL方案"></a>内建ACL方案</h4><p>Zookeeper由以下内建方案:</p>
+<ul>
+<li><strong>world</strong>: 只有一个id, <em>anyone</em>, 代表任何人.</li>
+<li><strong>auth</strong>: 这是一个特殊的方案, 它忽略任何被提供的表达式, 取而代之, 使用当前用户, 资格和方案. 当使用这一ACL时, 任何表达式都将被忽略. 但是在ACL中仍需提供表达式, 因为ACL必须匹配<em>scheme:expression:perms</em>的形式. 这一方案提供了一项便利, 因为它通常的场景是: 一个用户创建了一个节点, 这一节点的权限被绑定到该用户. 如果没有已认证的用户, 使用这一方案设置ACL将失败. 只有已认证用户才能使用这一方案.</li>
+<li><strong>digest</strong>: 使用 <em>username:password</em> 字符串生成哈希值, 这个hash将作为一个ACL ID特征. 通过明文发送 <em>username:password</em> 完成认证. 当用与ACL表达式时为 <em>username:BASE64(SHA1(username:password))</em>.</li>
+<li><strong>ip</strong>: 使用主机ip作为ACL ID特征. 表达式形式为 <em>addr/bits</em>.</li>
+<li><strong>x509</strong>: 使用客户端的X500委托作为ACL ID特征. 表达式客户端的X500委托的名称.当使用这一方案, 客户端将自动认证.</li>
+</ul>
+<h2 id="插拔式的Zookeeper认证"><a href="#插拔式的Zookeeper认证" class="headerlink" title="插拔式的Zookeeper认证"></a>插拔式的Zookeeper认证</h2><p>Zookeeper运行在不同的环境中, 使用不同的认证方案, 因此它有一个完整的插拔式认证框架. 即使内建的认证方案也使用插拔式认证框架.</p>
+<p>要理解这套真正框架如何工作, 首先必须理解俩个主要的认证操作. 框架首先必须认证客户端. 认证通常在客户端一连接服务器的时候就完成了, 认证由客户端发送或聚集的验证信息组成, 并且与这一连接关联. 框架处理的第二个操作是找到ACL中符合客户端的条目. ACL条目是 *&lt;idspec, permissions&gt;* 键值对. <em>idspec</em> 可能是匹配认证信息的简单字符串, 也可能是鉴定信息的表达式. 这取决于认证插件如何实现匹配. 下面是认证插件必须实现的接口:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">AuthenticationProvider</span> </span>&#123;</span><br><span class="line">    <span class="function">String <span class="title">getScheme</span><span class="params">()</span></span>;</span><br><span class="line">    KeeperException.<span class="function">Code <span class="title">handleAuthentication</span><span class="params">(ServerCnxn cnxn, <span class="keyword">byte</span> authData[])</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">isValid</span><span class="params">(String id)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">matches</span><span class="params">(String id, String aclExpr)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">isAuthenticated</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>第一个方法<em>getScheme</em>返回鉴别插件的字符串. 因为支持多种认证方法, 认证凭证或<em>idspec</em>永远以<em>scheme:</em>作为前缀. Zookeeper服务器使用认证插件返回的方案, 以决定方案使用的id.</p>
+<p>当客户端发送认证信息到关联的连接时, <em>handleAuthentication</em>方法将被调用. Zookeeper服务器传递认证信息到认证插件, 这个插件的<code>getScheme</code>方法要匹配客户端传递过来的<code>scheme</code>. 如果确定信息失效, <code>handleAuthentication</code>通常返回一个错误, 或者使用<code>cnxn.getAuthInfo().add(new Id(getScheme(), data))</code>将认证信息与连接绑定.</p>
+<p>认证插件涉及设置和使用ACL. 当一个znode设置了ACL, 服务器将向<code>isValid(String id)</code>方法传递条目中的id部分. 由插件验证id格式是否正确. 例如, <em>ip:172.16.0.0/16</em> 是有效的id, 但是<em>ip:host.com*是无效的. 如果新的ACL包含”auth”条目, *isAuthenticated</em> 方法将被调用, 以查看与此连接绑定的认证信息是否因该被添加到ACL中. 某些方案不应该包含在auth中. 例如, 如果指定了auth, ip就不应该添加到ACL中.</p>
+<p>当检查一个ACL时, Zookeeper会调用<code>matches(String id, String aclExpr)</code>方法. 这需要在相关的ACL条目中匹配认证信息. 为了找到应用到客户端的条目, 服务器将查找每一个条目的scheme, 如果存在来之该客户端的指定scheme的认证信息, <code>matches(String id, String aclExpr)</code>方法将被调用. 认证插件使用自己的逻辑并匹配scheme, 以决定id是都包含在aclExpr中. </p>
+<p>Zookeeper有两个内建的认证插件: ip 和 digest. 额外的认证插件可以通过系统属性添加. 服务器在启动时将查找以”zookeeper.authProvider”开头的系统属性, 并将这些属性的值翻译为认证插件的类名. 这些属性可以使用 <em>-Dzookeeeper.authProvider.X=com.f.MyAuth</em> 设置, 或者在服务器配置文件中添加类似下列条目:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">authProvider.1=com.f.MyAuth</span><br><span class="line">authProvider.2=com.f.MyAuth2</span><br></pre></td></tr></table></figure>
+
+<p>要确保属性的后缀时唯一的, 如果后缀重复, 如 <em>-Dzookeeeper.authProvider.X=com.f.MyAuth -Dzookeeper.authProvider.X=com.f.MyAuth2</em>, 只有一个会被使用. 同样的, 所有的服务器都因该使用同样的插件, 否则客户端在使用这些插件连接魔偶写服务器时会出现问题.</p>
+<h2 id="一致性保证"><a href="#一致性保证" class="headerlink" title="一致性保证"></a>一致性保证</h2><p>Zookeeper是一个高性能的弹性服务. 无论读写都被设计成快速的, 尽管读比写快. 原因是, 在读取数据的时候, Zookeeper可以提供略旧的数据, 这时由于Zookeeper的一致性保证导致的:</p>
+<ul>
+<li>顺序一致性: 客户端发出的更新将以它们被发送的顺序被应用.</li>
+<li>原子性: 更新要么成功, 要么失败. 不存在中间态.</li>
+<li>单一系统快照: 无论连接到哪一个服务器, 客户端都将得到同样的服务视图.</li>
+<li>可靠性: 一旦更新操作被应用, 从此时起直到某一客户端覆盖这个更新, 这个更新操作将被持久化. 这一保证有两个推论:<ol>
+<li>如果客户端获取成功的返回代码, 更新将被应用. 某些失败的情况下(连接错误, 超时等), 客户端无法得知更新是否被应用. 我们采取措施来减少故障, 但是只在成功返回代码的情况下提供保证.</li>
+<li>任何更新对客户端都是可见的, 客户端通过读取请求或成功的更新获取, 当服务器更新失败后恢复数据, 客户端更新也不会回滚. 直到客户端下一次读写操作.</li>
+</ol>
+</li>
+<li>时效性: 客户端系统视图保证合理时间内时最新的. 在这个时限内, 系统更新对客户端可见, 或者客户端将检测服务中断情况.</li>
+</ul>
+<p>通过使用这些一致性保证, 很容易构建高级功能, 例如: 领袖选举, 壁垒, 队列, 以及只针对客户端的读写可撤销锁. </p>
+<blockquote>
+<p>有时候开发者会误以为存在一个Zookeeper并没有实现的保证. 这就是: <strong>同时一致的跨客户端视图</strong>: Zookeeper并不保证, 每一个实例经过一段时间后, 两个不同的客户端将拥有对Zookeeper数据完全一致的视图. 由于向网络延迟这类因素的影响, 一个客户端更新数据, 而另一个客户端可能不会获取到关于这个更新的通知. 想象这样一个场景, 有A和B两个客户端. 如果A将节点/a的值从0更新到1, 然后通知B读/a的值, B可能会读到旧的值0, 这取决于B连接到哪一个服务器. 如果让A和B读取相同的数据非常重要, B应该在读取数据前调用<em>sync()</em>方法. 因此, Zookeeper并不保证服务器之间的数据同步变更, 但是Zookeeper基元可以被用来创建提供可用的客户端同步的高级功能.</p>
+</blockquote>
+<h2 id="绑定"><a href="#绑定" class="headerlink" title="绑定"></a>绑定</h2><p>Zookeeper支持两种语言: Java 和 C. 这里我们主要讨论Java.</p>
+<h3 id="Java语言绑定"><a href="#Java语言绑定" class="headerlink" title="Java语言绑定"></a>Java语言绑定</h3><p>Zookeeper的Java语言绑定又两个包组成: <strong>org.apache.zookeeper</strong> 和 <strong>org.apache.zookeeper.data</strong>. 其他组成Zookeeper的包是内部使用的, 或者是服务器实现的一部分. <strong>org.apache.zookeeper.data</strong> 包由作为容器的生成类组成.</p>
+<p>Zookeeper的Java客户端主要使用<strong>ZooKeeper</strong>类. 他的两个构造器之间的差别仅仅是可选的会话id和密码. Zookeeper支持在多个实例进程间的会话恢复. Java程序可以存储会话id和密码, 重启, 并且恢复上一个程序实例使用的会话id.</p>
+<p>当Zookeeper对象创建的时候, 两个线程同样被创建: 一个IO线程和一个事件线程. 所有的IO都发生在IO线程中(使用Java NIO). 所有的事件回调发生在事件线程中. 会话的维护, 例如重连接到服务器以及维持心跳, 都发生在IO线程. 同步方法的响应也发生在IO线程. 所有的异步响应和监听事件都发生在事件线程. 对于这一设计, 有几点需要注意:</p>
+<ul>
+<li>所有完成的异步调用和监听回调都是顺序执行的, 一次一个. 在此期间, 被调用的方法可以处理任何事情, 但是其他回调方法不能执行.</li>
+<li>回调函数不会阻塞IO进程或异步回调.</li>
+<li>同步调用可能不会按正确的顺序返回. 例如, 假设一个客户端处理如下进程: 对/a节点发起一个异步读取并设置监听, 这一回调结束后, 对/a节点发起一个同步读取. 请注意, 如果在异步读取和同步读取之间/a节点被更新, 客户端将在同步读取响应之前收到/a节点变更的监听事件, 但由于异步读取的回调阻塞了事件队列, 同步读取将在事件处理完成之前读取到/a节点的最新值.</li>
+</ul>
+<p>最后, 关闭客户端的规则很直接: 一旦ZooKeeper对象被断臂或这收到一个致命事件(<em>SESSION_EXPIRED</em> 和 <em>AUTH_FAILED</em>), ZooKeeper对象将变为无效. 客户端关闭时, 两个线程会关闭, 任何对zookeeper句柄的进一步访问都是未定义行为, 应予以避免.</p>
+<h4 id="客户端配置参数"><a href="#客户端配置参数" class="headerlink" title="客户端配置参数"></a>客户端配置参数</h4><p>下面的列表包含Java客户端的配置属性. 可以使用Java系统属性设置这些属性. 至于服务器属性, 请参考<a href="http://zookeeper.apache.org/doc/r3.5.6/zookeeperAdmin.html#sc_configuration" target="_blank" rel="noopener">Server configuration section</a>.</p>
+<ul>
+<li><em>zookeeper.sasl.client</em>: 是否开启SASL认证, 默认为 <em>true</em>.</li>
+<li><em>zookeeper.sasl.clientconfig</em>: 指定JAAS登录文件的上下文关键字. 默认为”Client”.</li>
+<li><em>zookeeper.sasl.client.username</em>: 传统的, 主体被分为3个部分: <em>primary</em>, <em>instance</em>, <em>realm</em>. 典型的<em>Kerberos V5<em>主体为 <code>primary/instance@REALM</code>. 本属性指定服务器主体的</em>primary</em>. 默认为”zookeeper”, <em>Instance</em>部分有服务器ip派生. 最终的服务器主体为<code>username/IP@realm</code>, username就是本属性的值, IP就是服务器ip, realm为<em>zookeeper.server.realm</em>的值.</li>
+<li><em>zookeeper.server.realm</em>: 服务器主体的<em>realm<em>部分. 默认情况下, 它是客户端主体的</em>realm</em>.</li>
+<li><em>zookeeper.disableAutoWatchReset</em>: 这个开关控制”监听器自动重置”是否开启. 默认情况下, 会话重连期间客户端自动重置监听器, 客户端可以通过将本属性设置为<em>true</em>关闭这一行为.</li>
+<li><em>zookeeper.client.secure</em>: 如果要连接服务器的安全客户端端口, 你需要在客户端将本属性设置为<em>true</em>. 这样将会使用指定的证书通过SSL连接服务器. 注意需要Netty客户端.</li>
+<li><em>zookeeper.clientCnxnSocket</em>: 指定使用哪一个clientCnxnSocket.可选项为:<strong>org.apache.zookeeper.ClientCnxnSocketNIO</strong> 和 <strong>org.apache.zookeeper.ClientCnxnSocketNetty</strong>. 默认为前者. 如果 <em>zookeeper.client.secure</em> 属性为 <em>true</em>, 需要在客户端设置本属性为 <strong>org.apache.zookeeper.ClientCnxnSocketNetty</strong>.</li>
+<li><em>zookeeper.ssl.keyStore.location</em> 和 <em>zookeeper.ssl.keyStore.password</em>: 前者指定JKS文件的位置, 此文件包含用于SSL连接的本地证书, 后者为解锁该文件的密码.</li>
+<li><em>zookeeper.ssl.trustStore.location</em> 和 <em>zookeeper.ssl.trustStore.password</em>: 同上, 此文件包含远程证书.</li>
+<li><em>jute.maxbuffer</em>: 指定从服务器传入的数据大小的最大值. 默认4194304Bytes, 即4MB. 这是一个明智的检查. Zookeeper服务器设计为存储和发送千字节数量级的数据. 如果传入数据长度大于这个值, 会产生一个IOException.</li>
+<li><em>zookeeper.kinit</em>: 指定列出缓存的二进制票证的路径, 默认为 “/usr/bin/kinit”.</li>
+</ul>
+<blockquote>
+<p>C语言绑定不在本文讨论范围内, 详情请参考 <a href="http://zookeeper.apache.org/doc/r3.5.6/zookeeperProgrammers.html#C+Binding" target="_blank" rel="noopener">C Binding</a></p>
+</blockquote>
+<h2 id="基石-Zookeeper操作指南"><a href="#基石-Zookeeper操作指南" class="headerlink" title="基石:Zookeeper操作指南"></a>基石:Zookeeper操作指南</h2><blockquote>
+<p>官方文档中, 本节只列出了大纲, 并没有详细内容.</p>
+</blockquote>
+<h2 id="编程架构"><a href="#编程架构" class="headerlink" title="编程架构"></a>编程架构</h2><blockquote>
+<p>同上, 这官方文档自己都没写全</p>
+</blockquote>
+<h2 id="陷阱-常见故障分析及处理"><a href="#陷阱-常见故障分析及处理" class="headerlink" title="陷阱:常见故障分析及处理"></a>陷阱:常见故障分析及处理</h2><p>现在, 你了解了Zookeeper. 它快速, 简单. 你的应用启动了, 但是等等…… 有一些错误. 下面是一些Zookeeper用户容易跳入的陷阱:</p>
+<ol>
+<li>如果使用监听器, 你必须查找已连接的监听事件. 当一个客户端从服务器断开连接, 在重新连接之前, 你无法接收到发生变更的通知. 如果你正在监听一个节点是否存在, 如果节点在你断开连接时创建并删除, 你将错过这一事件.</li>
+<li>你必须测试服务器是否宕机. 大多数服务器处于激活状态, Zookeeper服务就不会失败. 问题是: 你的应用能否处理? 真实世界中客户端到Zookeeper的连接时可以被破环的. (服务器宕机和网络隔离时连接丢失的普遍原因.) Zookeeper客户端会安排连接的恢复, 并让你知道发生了什么, 但是你必须确保你恢复了连接状态和失败的未完成的请求. 在测试环境中找出你是否正确做到了以上这些, 而不是在生产环境 - 使用由复数的服务器组成的服务并且重启它们.</li>
+<li>客户端使用的服务器列表必须匹配每台服务器维护的列表. 如果客户端的列表时服务器维护的列表的子集, 应用仍然能够运行, 虽然不是最佳方案. 但如果客户端的列表中的服务器不在集群中, 应用将无法运行.</li>
+<li>要小心你存放事务日志的位置. Zookeeper性能的最关键部分是事务日志. Zookeeper必须在返回响应前将事务同步到媒介中. 专用的事务日志设备时持续良好性能的关键. 将日志存放在业务繁忙的设备将对性能产生不利影响. 如果你只有一台存储设备, 将跟踪文件存放在NFS上并增加快照数量; 这不会消除问题, 但会缓解问题.</li>
+<li>正确设置Java的内存堆大小. 避免<em>swapping<em>很重要. 不必要的读取磁盘会将性能降级到无法接受的程度. 记住, 在Zookeeper中, 一切都是顺序的, 因此如果一个请求命中了磁盘, 其他所有排队中的请求都将命中磁盘. 要避免</em>swapping</em>, 舱室将内存堆的大小设置为你可以使用的物理内存的数量, 减少系统和缓存使用的内存数量. 决定最佳内存堆大小的方式就是进行负载测试. 如果因为某些原因无法测试, 那么保守估计并选取一个远低于会引起数据交换的限制的数值. 例如, 4G内存的机器上, 3G的内存堆是一个用于启动的保守估计.</li>
+</ol>
+<blockquote>
+<p>本文档翻译自<a href="http://zookeeper.apache.org/doc/r3.5.6/zookeeperProgrammers.html" target="_blank" rel="noopener">ZooKeeper Programmer’s Guide</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Zookeeper/" rel="tag"># Zookeeper</a>
+              <a href="/tags/%E6%96%87%E6%A1%A3%E7%BF%BB%E8%AF%91/" rel="tag"># 文档翻译</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/01/02/2020%E8%A7%84%E5%88%92/" rel="prev" title="2020规划">
+      <i class="fa fa-chevron-left"></i> 2020规划
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/01/10/ZooKeeper-Java%E7%BC%96%E7%A8%8B%E5%AE%9E%E4%BE%8B/" rel="next" title="ZooKeeper Java编程实例">
+      ZooKeeper Java编程实例 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+        </div>
+        
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Liujialong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

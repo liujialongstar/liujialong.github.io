@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"liujialongstar.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.3","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="开始使用: 利用Zookeeper协调分布式应用本文旨在使你快速上手Zookeeper, 主要目标人群为希望尝试Zookeeper的开发人员. 本文包括用于单节点Zookeeper服务器的安装向导, 用于测试服务器是否运行的若干命令. 最后, 为了方便起见, 本文部分区域考虑到了更加复杂的安装方式, 例如部署副本, 以及充分利用事务日志.完整的商业性部署, 请参考ZooKeeper Adminis">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Zookeeper 开始使用">
+<meta property="og:url" content="https://liujialongstar.github.io/2020/01/01/Zookeeper-%E5%BC%80%E5%A7%8B%E4%BD%BF%E7%94%A8/index.html">
+<meta property="og:site_name" content="Longlong">
+<meta property="og:description" content="开始使用: 利用Zookeeper协调分布式应用本文旨在使你快速上手Zookeeper, 主要目标人群为希望尝试Zookeeper的开发人员. 本文包括用于单节点Zookeeper服务器的安装向导, 用于测试服务器是否运行的若干命令. 最后, 为了方便起见, 本文部分区域考虑到了更加复杂的安装方式, 例如部署副本, 以及充分利用事务日志.完整的商业性部署, 请参考ZooKeeper Adminis">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-01-01T07:56:27.000Z">
+<meta property="article:modified_time" content="2021-01-29T02:21:56.796Z">
+<meta property="article:author" content="Liujialong">
+<meta property="article:tag" content="Zookeeper">
+<meta property="article:tag" content="文档翻译">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://liujialongstar.github.io/2020/01/01/Zookeeper-%E5%BC%80%E5%A7%8B%E4%BD%BF%E7%94%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Zookeeper 开始使用 | Longlong</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <main class="main">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+        <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longlong</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">A Rookie Programmer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#开始使用-利用Zookeeper协调分布式应用"><span class="nav-number">1.</span> <span class="nav-text">开始使用: 利用Zookeeper协调分布式应用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#单机配置"><span class="nav-number">1.1.</span> <span class="nav-text">单机配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#连接Zookeeper"><span class="nav-number">1.2.</span> <span class="nav-text">连接Zookeeper</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#集群模式"><span class="nav-number">1.3.</span> <span class="nav-text">集群模式</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Liujialong</p>
+  <div class="site-description" itemprop="description">My records for programming and life</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </header>
+
+      
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div id="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+      <div class="main-inner">
+        
+
+        <div class="content post posts-expand">
+          
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://liujialongstar.github.io/2020/01/01/Zookeeper-%E5%BC%80%E5%A7%8B%E4%BD%BF%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Liujialong">
+      <meta itemprop="description" content="My records for programming and life">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longlong">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Zookeeper 开始使用
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-01-01 15:56:27" itemprop="dateCreated datePublished" datetime="2020-01-01T15:56:27+08:00">2020-01-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-01-29 10:21:56" itemprop="dateModified" datetime="2021-01-29T10:21:56+08:00">2021-01-29</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Zookeeper/" itemprop="url" rel="index"><span itemprop="name">Zookeeper</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="开始使用-利用Zookeeper协调分布式应用"><a href="#开始使用-利用Zookeeper协调分布式应用" class="headerlink" title="开始使用: 利用Zookeeper协调分布式应用"></a>开始使用: 利用Zookeeper协调分布式应用</h2><p>本文旨在使你快速上手Zookeeper, 主要目标人群为希望尝试Zookeeper的开发人员. 本文包括用于单节点Zookeeper服务器的安装向导, 用于测试服务器是否运行的若干命令. 最后, 为了方便起见, 本文部分区域考虑到了更加复杂的安装方式, 例如部署副本, 以及充分利用事务日志.<br>完整的商业性部署, 请参考<a href="https://zookeeper.apache.org/doc/r3.5.6/zookeeperAdmin.html" target="_blank" rel="noopener">ZooKeeper Administrator’s Guide</a>.</p>
+<a id="more"></a>
+
+<h3 id="单机配置"><a href="#单机配置" class="headerlink" title="单机配置"></a>单机配置</h3><p>在单机模式下配置Zookeeper服务器很简单. 服务器包含在一个单独的JAR文件中, 安装只需要创建一个配置文件.</p>
+<p>你需要下载一个稳定版本的Zookeeper, 解压并切换到Zookeeper的根目录下.</p>
+<p>你需要一个配置文件来启动Zookeeper. 下面是一个例子, 请创建文件 conf/zoo.cfg</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tickTime=2000</span><br><span class="line">dataDir=/tmp/zookeeper</span><br><span class="line">clientPort=2181</span><br></pre></td></tr></table></figure>
+
+<p>每个字段含义如下</p>
+<ul>
+<li>tickTime: Zookeeper最小时间单元(单位毫秒), 用于心跳检测, 会话超时时间是tickTime的两倍.</li>
+<li>dataDir: 用于存储内存数据库的快照, 如非另行配置, 数据库更新的事务日志也将存储在此处.</li>
+<li>clientPort: 监听客户端连接的端口.</li>
+</ul>
+<p>创建配置文件后, 可以通过如下命令启动Zookeeper:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">bin/zkServer.sh start</span><br><span class="line"><span class="comment">#windows使用下面的命令</span></span><br><span class="line">./bin/zkServer.cmd</span><br></pre></td></tr></table></figure>
+
+<h3 id="连接Zookeeper"><a href="#连接Zookeeper" class="headerlink" title="连接Zookeeper"></a>连接Zookeeper</h3><p>运行如下命令:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/zkCli.sh -server 127.0.0.1:2181</span><br></pre></td></tr></table></figure>
+
+<p>连接成功后,你将会看到类似以下内容:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Connecting to localhost:2181</span><br><span class="line">log4j:WARN No appenders could be found <span class="keyword">for</span> logger (org.apache.zookeeper.ZooKeeper).</span><br><span class="line">log4j:WARN Please initialize the log4j system properly.</span><br><span class="line">Welcome to ZooKeeper!</span><br><span class="line">JLine support is enabled</span><br><span class="line">[zkshell: 0]</span><br></pre></td></tr></table></figure>
+
+<p>此时,键入 <code>help</code> 可以获取能够在客户端执行的命令列表:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">[zkshell: 0] <span class="built_in">help</span></span><br><span class="line">ZooKeeper host:port cmd args</span><br><span class="line">    get path [watch]</span><br><span class="line">    ls path [watch]</span><br><span class="line">    <span class="built_in">set</span> path data [version]</span><br><span class="line">    delquota [-n|-b] path</span><br><span class="line">    quit</span><br><span class="line">    printwatches on|off</span><br><span class="line">    create path data acl</span><br><span class="line">    <span class="built_in">stat</span> path [watch]</span><br><span class="line">    listquota path</span><br><span class="line">    <span class="built_in">history</span></span><br><span class="line">    setAcl path acl</span><br><span class="line">    getAcl path</span><br><span class="line">    sync path</span><br><span class="line">    redo cmdno</span><br><span class="line">    addauth scheme auth</span><br><span class="line">    delete path [version]</span><br><span class="line">    deleteall path</span><br><span class="line">    setquota -n|-b val path</span><br></pre></td></tr></table></figure>
+
+<p>在这里,你可以尝试一些简单的命令, 来感受这个简单的命令行交互界面. 首先, 可以尝试查询根节点的子节点:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[zkshell: 8] ls /</span><br><span class="line">[zookeeper]</span><br></pre></td></tr></table></figure>
+
+<p>接下来,通过运行 <code>create /zk_test my_data</code> 来创建一个znode:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[zkshell: 9] create /zk_test my_data</span><br><span class="line">Created /zk_test</span><br></pre></td></tr></table></figure>
+
+<p>此时,运行 <code>ls /</code> 命令可以看到刚刚创建的节点:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[zkshell: 11] ls /</span><br><span class="line">[zookeeper, zk_test]</span><br></pre></td></tr></table></figure>
+
+<p>接下来运行 <code>get</code> 命令, 验证数据是否已经绑定到刚刚创建的znode:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[zkshell: 12] get /zk_test</span><br><span class="line">my_data</span><br><span class="line">cZxid = 5</span><br><span class="line">ctime = Fri Jun 05 13:57:06 PDT 2009</span><br><span class="line">mZxid = 5</span><br><span class="line">mtime = Fri Jun 05 13:57:06 PDT 2009</span><br><span class="line">pZxid = 5</span><br><span class="line">cversion = 0</span><br><span class="line">dataVersion = 0</span><br><span class="line">aclVersion = 0</span><br><span class="line">ephemeralOwner = 0</span><br><span class="line">dataLength = 7</span><br><span class="line">numChildren = 0</span><br></pre></td></tr></table></figure>
+
+<p>运行 <code>set</code>命令, 可以改变znode的值:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">[zkshell: 14] <span class="built_in">set</span> /zk_test junk</span><br><span class="line">cZxid = 5</span><br><span class="line">ctime = Fri Jun 05 13:57:06 PDT 2009</span><br><span class="line">mZxid = 6</span><br><span class="line">mtime = Fri Jun 05 14:01:52 PDT 2009</span><br><span class="line">pZxid = 5</span><br><span class="line">cversion = 0</span><br><span class="line">dataVersion = 1</span><br><span class="line">aclVersion = 0</span><br><span class="line">ephemeralOwner = 0</span><br><span class="line">dataLength = 4</span><br><span class="line">numChildren = 0</span><br><span class="line">[zkshell: 15] get /zk_test</span><br><span class="line">junk</span><br><span class="line">cZxid = 5</span><br><span class="line">ctime = Fri Jun 05 13:57:06 PDT 2009</span><br><span class="line">mZxid = 6</span><br><span class="line">mtime = Fri Jun 05 14:01:52 PDT 2009</span><br><span class="line">pZxid = 5</span><br><span class="line">cversion = 0</span><br><span class="line">dataVersion = 1</span><br><span class="line">aclVersion = 0</span><br><span class="line">ephemeralOwner = 0</span><br><span class="line">dataLength = 4</span><br><span class="line">numChildren = 0</span><br></pre></td></tr></table></figure>
+
+<p>最后, 运行 <code>delete</code> 命令, 删除刚刚创建的节点:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[zkshell: 16] delete /zk_test</span><br><span class="line">[zkshell: 17] ls /</span><br><span class="line">[zookeeper]</span><br><span class="line">[zkshell: 18]</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>更多命令, 请参考<a href="https://zookeeper.apache.org/doc/r3.5.6/zookeeperProgrammers.html" target="_blank" rel="noopener">Programmer’s Guide</a></p>
+</blockquote>
+<h3 id="集群模式"><a href="#集群模式" class="headerlink" title="集群模式"></a>集群模式</h3><p>在单机模式下运行Zookeeper, 方便用于学习,开发和测试. 但生产环境下,需要在集群模式下运行Zookeeper. 同一应用的一组副本服务器, 称之为集群, 集群中所有服务器拥有一样的配置文件(部分配置可根据机器而定).</p>
+<blockquote>
+<p>集群模式下, 至少要有3台服务器. 强烈推荐使用更多的服务器. 如果只有两台服务器, 一旦其中一台宕机, 将没有足够的机器组成集群.两台服务器比单个服务器本质上更加不稳定, 因为有两个故障点.</p>
+</blockquote>
+<p>集群模式的conf/zoo.cfg文件与单机模式接近, 但有一点不同:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">tickTime=2000</span><br><span class="line">dataDir=/var/lib/zookeeper</span><br><span class="line">clientPort=2181</span><br><span class="line">initLimit=5</span><br><span class="line">syncLimit=2</span><br><span class="line">server.1=zoo1:2888:3888</span><br><span class="line">server.2=zoo2:2888:3888</span><br><span class="line">server.3=zoo3:2888:3888</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>initLimit: LF初始通信时限. <code>followers</code> 连接并同步到 <code>leader</code> 的初始化连接时间,单位为tickTime.当超过设定时间, 连接失败, 进行另一次选举.</li>
+<li>syncLimit: LF同步通信时限. <code>follwer</code> 与 <code>leader</code> 之间请求应答的超时时间, 单位为tickTime. 当超过设定时间, 此<code>follower</code> 将被丢弃, 所有关联到此<code>follower</code>的客户端将连接另一个<code>follower</code>.</li>
+</ul>
+<blockquote>
+<p>本文翻译自<a href="https://zookeeper.apache.org/doc/r3.5.6/zookeeperStarted.html" target="_blank" rel="noopener">ZooKeeper Getting Started Guide</a>,更多<a href="https://zookeeper.apache.org/doc/r3.5.6/zookeeperStarted.html" target="_blank" rel="noopener">详细内容</a>,请<a href="https://zookeeper.apache.org/doc/r3.5.6/zookeeperStarted.html" target="_blank" rel="noopener">点击</a>查看</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Zookeeper/" rel="tag"># Zookeeper</a>
+              <a href="/tags/%E6%96%87%E6%A1%A3%E7%BF%BB%E8%AF%91/" rel="tag"># 文档翻译</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/12/31/ZooKeeper-%E7%BB%BC%E8%BF%B0/" rel="prev" title="ZooKeeper--综述">
+      <i class="fa fa-chevron-left"></i> ZooKeeper--综述
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/01/02/2020%E8%A7%84%E5%88%92/" rel="next" title="2020规划">
+      2020规划 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+        </div>
+        
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Liujialong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
