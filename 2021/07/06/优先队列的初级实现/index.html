@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"liujialongstar.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.3","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="许多应用程序都需要处理有序的元素, 但不一定要求他们全部有序, 或是不一定一次就将它们排序. 很多情况下, 我们会收集一些元素, 处理当前最大的元素, 然后在收集更多的元素, 再处理当前键值最大的元素, 如此这般. 例如, 你可能有一台能够同时运行多个应用程序的电脑. 这是通过为每个应用程序的事件非配一个优先级, 并总是处理下一个优先级更高的事件来实现的. 这种情况下, 一个合适的数据结构应该支持">
+<meta property="og:type" content="article">
+<meta property="og:title" content="优先队列的初级实现">
+<meta property="og:url" content="https://liujialongstar.github.io/2021/07/06/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97%E7%9A%84%E5%88%9D%E7%BA%A7%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:site_name" content="Longlong">
+<meta property="og:description" content="许多应用程序都需要处理有序的元素, 但不一定要求他们全部有序, 或是不一定一次就将它们排序. 很多情况下, 我们会收集一些元素, 处理当前最大的元素, 然后在收集更多的元素, 再处理当前键值最大的元素, 如此这般. 例如, 你可能有一台能够同时运行多个应用程序的电脑. 这是通过为每个应用程序的事件非配一个优先级, 并总是处理下一个优先级更高的事件来实现的. 这种情况下, 一个合适的数据结构应该支持">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-07-06T09:02:39.000Z">
+<meta property="article:modified_time" content="2021-07-06T10:14:21.223Z">
+<meta property="article:author" content="Liujialong">
+<meta property="article:tag" content="算法">
+<meta property="article:tag" content="排序">
+<meta property="article:tag" content="优先队列">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://liujialongstar.github.io/2021/07/06/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97%E7%9A%84%E5%88%9D%E7%BA%A7%E5%AE%9E%E7%8E%B0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>优先队列的初级实现 | Longlong</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <main class="main">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+        <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longlong</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">A Rookie Programmer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#API"><span class="nav-number">1.</span> <span class="nav-text">API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#优先队列的调用示例"><span class="nav-number">2.</span> <span class="nav-text">优先队列的调用示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初级实现"><span class="nav-number">3.</span> <span class="nav-text">初级实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#无序数组实现"><span class="nav-number">3.1.</span> <span class="nav-text">无序数组实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#有序数组实现"><span class="nav-number">3.2.</span> <span class="nav-text">有序数组实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#链表表示法"><span class="nav-number">3.3.</span> <span class="nav-text">链表表示法</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Liujialong</p>
+  <div class="site-description" itemprop="description">My records for programming and life</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </header>
+
+      
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div id="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+      <div class="main-inner">
+        
+
+        <div class="content post posts-expand">
+          
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://liujialongstar.github.io/2021/07/06/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97%E7%9A%84%E5%88%9D%E7%BA%A7%E5%AE%9E%E7%8E%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Liujialong">
+      <meta itemprop="description" content="My records for programming and life">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longlong">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          优先队列的初级实现
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-07-06 17:02:39 / 修改时间：18:14:21" itemprop="dateCreated datePublished" datetime="2021-07-06T17:02:39+08:00">2021-07-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95/" itemprop="url" rel="index"><span itemprop="name">算法</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>许多应用程序都需要处理有序的元素, 但不一定要求他们全部有序, 或是不一定一次就将它们排序. 很多情况下, 我们会收集一些元素, 处理当前最大的元素, 然后在收集更多的元素, 再处理当前键值最大的元素, 如此这般. 例如, 你可能有一台能够同时运行多个应用程序的电脑. 这是通过为每个应用程序的事件非配一个优先级, 并总是处理下一个优先级更高的事件来实现的.</p>
+<p>这种情况下, 一个合适的数据结构应该支持两种操作: <strong>删除最大元素和插入元素</strong>. 这种数据结构叫做<strong>优先队列</strong>.</p>
+<p>优先队列的一些重要的应用场景包括:</p>
+<ul>
+<li>模拟系统, 其中事件的键即为发生时间, 而系统需要按照时间顺序处理所有事件;</li>
+<li>任务调度, 其中键值对应的优先级决定了应该首先执行哪些任务;</li>
+<li>数值计算, 键值代表计算错误, 而我们需要按照键值制定的顺序来修正它们.</li>
+</ul>
+<p>下面, 我们来一步步实现优先队列.</p>
+<a id="more"></a>
+
+<h2 id="API"><a href="#API" class="headerlink" title="API"></a>API</h2><p>优先队列作为一种<strong>抽象数据类型(ADT)</strong>, 它表示了一组值和对这些值的操作, 他的抽象层是我们能够方便地将应用程序和各种具体实现隔离开来. 首先我们将定义一组API来表示优先队列.</p>
+<p>优先队列最重要的操作就是<strong>删除最大元素和插入元素</strong>. 删除最大元素的方法名为delMax(), 插入元素的法那个法名为insert(). 为了将API定义完整, 我们加入了构造函数和一个空队列测试方法. 并且实现了泛型. 具体API列表如下表:</p>
+<table>
+<thead>
+<tr>
+<th><code>public class MaxPriorityQueue&lt;T exendss Comparable&lt;T&gt;&gt;</code></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MaxPriorityQueue()</td>
+<td>创建一个优先队列</td>
+</tr>
+<tr>
+<td>MaxPriorityQueue(int max)</td>
+<td>创建一个最大容量为max的优先队列</td>
+</tr>
+<tr>
+<td>MaxPriorityQueue(T[] a)</td>
+<td>用a[]中的元素创建一个与优先队列</td>
+</tr>
+<tr>
+<td>void insert(T v)</td>
+<td>向优先队列插入一个元素</td>
+</tr>
+<tr>
+<td>T max()</td>
+<td>返回最大元素</td>
+</tr>
+<tr>
+<td>T delMax()</td>
+<td>删除并返回最大元素</td>
+</tr>
+<tr>
+<td>boolean isEmpty()</td>
+<td>返回队列是否为空</td>
+</tr>
+<tr>
+<td>int size()</td>
+<td>返回优先队列中元素的个数</td>
+</tr>
+</tbody></table>
+<p>类似的, 可以创建一个MinPriorityQueue, 它使用delMin()方法来删除并返回队列中键值最小的那个元素.</p>
+<h2 id="优先队列的调用示例"><a href="#优先队列的调用示例" class="headerlink" title="优先队列的调用示例"></a>优先队列的调用示例</h2><p>为了展示优先队列的抽象模型的价值, 考虑以下问题:</p>
+<p>输入N个字符串, 每个字符串都对应着一个整数, 我们需要从中找到最大的(或最小的)M个整数(及其关联的字符串). 输入量非常大, 所以无法通过排序找出M个最大的元素. 也可以将每个新的输入和已知的M个最大元素比较, 但除非M较小, 否则这种比较代价非常昂贵.</p>
+<p>下面的例子中, 我们只要高效地实现insert()和delMin(), 就可以通过调用MinPriorityQueue解决这个问题.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TopM</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> M = <span class="number">3</span>;</span><br><span class="line">        String[] a = &#123;<span class="string">"q"</span>,<span class="string">"w"</span>,<span class="string">"e"</span>,<span class="string">"r"</span>,<span class="string">"t"</span>,<span class="string">"y"</span>,<span class="string">"u"</span>,<span class="string">"i"</span>,<span class="string">"o"</span>,<span class="string">"p"</span>,<span class="string">"a"</span>,<span class="string">"s"</span>,<span class="string">"d"</span>,<span class="string">"f"</span>,<span class="string">"g"</span>,<span class="string">"h"</span>,<span class="string">"j"</span>,<span class="string">"k"</span>,<span class="string">"l"</span>,<span class="string">"z"</span>,<span class="string">"x"</span>,<span class="string">"c"</span>,<span class="string">"v"</span>,<span class="string">"b"</span>,<span class="string">"n"</span>,<span class="string">"m"</span>&#125;;</span><br><span class="line">        <span class="keyword">int</span> N = a.length;</span><br><span class="line">        MinPriorityQueue&lt;String&gt; pq = <span class="keyword">new</span> MinPriorityQueue&lt;&gt;(M+<span class="number">1</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</span><br><span class="line">            pq.insert(a[i]);</span><br><span class="line">            <span class="keyword">if</span>(pq.size &gt; M) &#123;</span><br><span class="line">                pq.delMin();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        LinkedStack&lt;String&gt; stack = <span class="keyword">new</span> LinkedStack&lt;&gt;();</span><br><span class="line">        <span class="keyword">while</span> (!pq.isEmpty()) &#123;</span><br><span class="line">            stack.push(pq.delMin());</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">for</span>(String s: stack) &#123;</span><br><span class="line">            System.out.println(s);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="初级实现"><a href="#初级实现" class="headerlink" title="初级实现"></a>初级实现</h2><h3 id="无序数组实现"><a href="#无序数组实现" class="headerlink" title="无序数组实现"></a>无序数组实现</h3><p>实现优先队列最简单的方法就是基于栈的实现. insert()方法的代码和push()方法完全一样. 要实现删除最小元素, 可以添加一段类似于选择排序的内循环代码, 将最小元素和边界元素交换, 接下来类似栈的pop()方法, 删除边界元素.</p>
+<p>具体实现如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> liujialong</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@date</span> 2021/7/6</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">UnorderedMinPriorityQueue</span>&lt;<span class="title">T</span> <span class="keyword">extends</span> <span class="title">Comparable</span>&lt;<span class="title">T</span>&gt;&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> size;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> T[] t;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">UnorderedMinPriorityQueue</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        t = (T[]) <span class="keyword">new</span> Comparable[<span class="number">1</span>];</span><br><span class="line">        size = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">UnorderedMinPriorityQueue</span><span class="params">(<span class="keyword">int</span> capacity)</span> </span>&#123;</span><br><span class="line">        t = (T[]) <span class="keyword">new</span> Comparable[capacity];</span><br><span class="line">        size = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">UnorderedMinPriorityQueue</span><span class="params">(T[] t)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.t = t;</span><br><span class="line">        size = t.length;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 插入元素</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> v</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">insert</span><span class="params">(T v)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (size == t.length) &#123;</span><br><span class="line">            resize(t.length * <span class="number">2</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        t[size++] = v;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 类似于选择排序的内循环, 将最小值和边界值交换</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">min</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> edge = size -<span class="number">1</span>;</span><br><span class="line">        <span class="keyword">int</span> min = edge;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; edge; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span>(less(t[i], t[min]))&#123;</span><br><span class="line">                min = i;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        exchange(t, min, edge);</span><br><span class="line">        <span class="keyword">return</span> t[edge];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 类似于栈的pop()方法, 删除边界元素</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">delMin</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        min();</span><br><span class="line">        T item = t[--size];</span><br><span class="line">        t[size] = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">if</span>(size &gt; <span class="number">0</span> &amp;&amp; size == t.length/<span class="number">4</span>) &#123;</span><br><span class="line">            resize(t.length/<span class="number">2</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> item;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isEmpty</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.size == <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">size</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> size;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 动态扩缩容</span></span><br><span class="line"><span class="comment">     * 新建临时数组, 将原数组元素按顺序赋值给临时数组, 最后将数组的引用指向临时数组</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> max</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">resize</span><span class="params">(<span class="keyword">int</span> max)</span> </span>&#123;</span><br><span class="line">        T[] temp = (T[]) <span class="keyword">new</span> Comparable[max];</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">            temp[i] = t[i];</span><br><span class="line">        &#125;</span><br><span class="line">        t = temp;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">less</span><span class="params">(Comparable v, Comparable w)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> v.compareTo(w) &lt; <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">exchange</span><span class="params">(Comparable[] a, <span class="keyword">int</span> i, <span class="keyword">int</span> j)</span> </span>&#123;</span><br><span class="line">        Comparable t = a[i];</span><br><span class="line">        a[i] = a[j];</span><br><span class="line">        a[j] = t;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> M = <span class="number">3</span>;</span><br><span class="line">        String[] a = &#123;<span class="string">"q"</span>,<span class="string">"w"</span>,<span class="string">"e"</span>,<span class="string">"r"</span>,<span class="string">"t"</span>,<span class="string">"y"</span>,<span class="string">"u"</span>,<span class="string">"i"</span>,<span class="string">"o"</span>,<span class="string">"p"</span>,<span class="string">"a"</span>,<span class="string">"s"</span>,<span class="string">"d"</span>,<span class="string">"f"</span>,<span class="string">"g"</span>,<span class="string">"h"</span>,<span class="string">"j"</span>,<span class="string">"k"</span>,<span class="string">"l"</span>,<span class="string">"z"</span>,<span class="string">"x"</span>,<span class="string">"c"</span>,<span class="string">"v"</span>,<span class="string">"b"</span>,<span class="string">"n"</span>,<span class="string">"m"</span>&#125;;</span><br><span class="line">        <span class="keyword">int</span> N = a.length;</span><br><span class="line">        UnorderedMinPriorityQueue&lt;String&gt; pq = <span class="keyword">new</span> UnorderedMinPriorityQueue&lt;&gt;(M+<span class="number">1</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</span><br><span class="line">            pq.insert(a[i]);</span><br><span class="line">            <span class="keyword">if</span>(pq.size &gt; M) &#123;</span><br><span class="line">                pq.delMin();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        LinkedStack&lt;String&gt; stack = <span class="keyword">new</span> LinkedStack&lt;&gt;();</span><br><span class="line">        <span class="keyword">while</span> (!pq.isEmpty()) &#123;</span><br><span class="line">            stack.push(pq.delMin());</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">for</span>(String s: stack) &#123;</span><br><span class="line">            System.out.println(s);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="有序数组实现"><a href="#有序数组实现" class="headerlink" title="有序数组实现"></a>有序数组实现</h3><p>另一种实现优先队列的方法就是在insert()方法中添加代码, 将所有较小的元素向右边移动一格以数组保持有序(和插入排序一样). 这样最小的元素总在数组的一边, 删除最小元素就和栈的pop操作一样了.</p>
+<p>具体实现如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> liujialong</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@date</span> 2021/7/6</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">OrderedMinPriorityQueue</span>&lt;<span class="title">T</span> <span class="keyword">extends</span> <span class="title">Comparable</span>&lt;<span class="title">T</span>&gt;&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> size;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> T[] t;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">OrderedMinPriorityQueue</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        t = (T[]) <span class="keyword">new</span> Comparable[<span class="number">1</span>];</span><br><span class="line">        size = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">OrderedMinPriorityQueue</span><span class="params">(<span class="keyword">int</span> capacity)</span> </span>&#123;</span><br><span class="line">        t = (T[]) <span class="keyword">new</span> Comparable[capacity];</span><br><span class="line">        size = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">OrderedMinPriorityQueue</span><span class="params">(T[] t)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.t = t;</span><br><span class="line">        size = t.length;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 插入元素</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> v</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">insert</span><span class="params">(T v)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (size == t.length) &#123;</span><br><span class="line">            resize(t.length * <span class="number">2</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">int</span> i = size -<span class="number">1</span>;</span><br><span class="line">        <span class="keyword">while</span> (i &gt;= <span class="number">0</span> &amp;&amp; less(t[i], v))&#123;</span><br><span class="line">            t[i+<span class="number">1</span>] = t[i];</span><br><span class="line">            i--;</span><br><span class="line">        &#125;</span><br><span class="line">        t[i+<span class="number">1</span>] = v;</span><br><span class="line">        size++;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">min</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> t[size-<span class="number">1</span>];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 类似于栈的pop()方法, 删除边界元素</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">delMin</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        T item = t[--size];</span><br><span class="line">        t[size] = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">if</span>(size &gt; <span class="number">0</span> &amp;&amp; size == t.length/<span class="number">4</span>) &#123;</span><br><span class="line">            resize(t.length/<span class="number">2</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> item;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isEmpty</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.size == <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">size</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> size;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 动态扩缩容</span></span><br><span class="line"><span class="comment">     * 新建临时数组, 将原数组元素按顺序赋值给临时数组, 最后将数组的引用指向临时数组</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> max</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">resize</span><span class="params">(<span class="keyword">int</span> max)</span> </span>&#123;</span><br><span class="line">        T[] temp = (T[]) <span class="keyword">new</span> Comparable[max];</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">            temp[i] = t[i];</span><br><span class="line">        &#125;</span><br><span class="line">        t = temp;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">less</span><span class="params">(Comparable v, Comparable w)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> v.compareTo(w) &lt; <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">exchange</span><span class="params">(Comparable[] a, <span class="keyword">int</span> i, <span class="keyword">int</span> j)</span> </span>&#123;</span><br><span class="line">        Comparable t = a[i];</span><br><span class="line">        a[i] = a[j];</span><br><span class="line">        a[j] = t;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> M = <span class="number">3</span>;</span><br><span class="line">        String[] a = &#123;<span class="string">"q"</span>,<span class="string">"w"</span>,<span class="string">"e"</span>,<span class="string">"r"</span>,<span class="string">"t"</span>,<span class="string">"y"</span>,<span class="string">"u"</span>,<span class="string">"i"</span>,<span class="string">"o"</span>,<span class="string">"p"</span>,<span class="string">"a"</span>,<span class="string">"s"</span>,<span class="string">"d"</span>,<span class="string">"f"</span>,<span class="string">"g"</span>,<span class="string">"h"</span>,<span class="string">"j"</span>,<span class="string">"k"</span>,<span class="string">"l"</span>,<span class="string">"z"</span>,<span class="string">"x"</span>,<span class="string">"c"</span>,<span class="string">"v"</span>,<span class="string">"b"</span>,<span class="string">"n"</span>,<span class="string">"m"</span>&#125;;</span><br><span class="line">        <span class="keyword">int</span> N = a.length;</span><br><span class="line">        OrderedMinPriorityQueue&lt;String&gt; pq = <span class="keyword">new</span> OrderedMinPriorityQueue&lt;&gt;(M+<span class="number">1</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</span><br><span class="line">            pq.insert(a[i]);</span><br><span class="line">            <span class="keyword">if</span>(pq.size &gt; M) &#123;</span><br><span class="line">                pq.delMin();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        LinkedStack&lt;String&gt; stack = <span class="keyword">new</span> LinkedStack&lt;&gt;();</span><br><span class="line">        <span class="keyword">while</span> (!pq.isEmpty()) &#123;</span><br><span class="line">            stack.push(pq.delMin());</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">for</span>(String s: stack) &#123;</span><br><span class="line">            System.out.println(s);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="链表表示法"><a href="#链表表示法" class="headerlink" title="链表表示法"></a>链表表示法</h3><p>类似于上述两种方式, 我们可以使用基于链表的下压栈的代码作为基础, 实现优先队列.</p>
+<p>使用无序序列是解决这个问题的<strong>惰性</strong>方法, 我们仅在需要的时候才采取行动(找出最大(小)元素); 使用有序序列则是解决问题的<strong>积极</strong>方法, 在插入元素的时候保持列表有序, 是后续操作更高效.</p>
+<p>优先队列的初级实现效率并不高, 最坏情况下, 有序数组的插入操作和无需数组的删除操作都需要线性时间完成. </p>
+<p>此后, 我们将讨论堆实现的优先队列</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%AE%97%E6%B3%95/" rel="tag"># 算法</a>
+              <a href="/tags/%E6%8E%92%E5%BA%8F/" rel="tag"># 排序</a>
+              <a href="/tags/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97/" rel="tag"># 优先队列</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/07/01/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8F/" rel="prev" title="快速排序">
+      <i class="fa fa-chevron-left"></i> 快速排序
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/07/06/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97%E7%9A%84%E5%A0%86%E5%AE%9E%E7%8E%B0/" rel="next" title="优先队列的堆实现">
+      优先队列的堆实现 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+        </div>
+        
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Liujialong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

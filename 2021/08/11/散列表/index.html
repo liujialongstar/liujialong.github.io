@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"liujialongstar.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.3","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="如果所有的键都是小的整数, 就可以使用一个数组来实现无序的符号表, 将键作为数组的索引而数组中键i处存储的就是它对应的值. 这样就可以快速访问任意键的值.  散列表就是这种简易方法的扩展并能处理更加复杂的类型的键. 散列表的查找算法分为两步. 首先使用散列函数将被查找的键转化为数组的一个索引. 理想情况下, 不同的键都能转化为不同的索引值. 但实际上需面对两个或多个键都散列到相同索引的情况. 因此">
+<meta property="og:type" content="article">
+<meta property="og:title" content="散列表">
+<meta property="og:url" content="https://liujialongstar.github.io/2021/08/11/%E6%95%A3%E5%88%97%E8%A1%A8/index.html">
+<meta property="og:site_name" content="Longlong">
+<meta property="og:description" content="如果所有的键都是小的整数, 就可以使用一个数组来实现无序的符号表, 将键作为数组的索引而数组中键i处存储的就是它对应的值. 这样就可以快速访问任意键的值.  散列表就是这种简易方法的扩展并能处理更加复杂的类型的键. 散列表的查找算法分为两步. 首先使用散列函数将被查找的键转化为数组的一个索引. 理想情况下, 不同的键都能转化为不同的索引值. 但实际上需面对两个或多个键都散列到相同索引的情况. 因此">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-08-11T07:00:37.000Z">
+<meta property="article:modified_time" content="2021-08-12T09:46:15.377Z">
+<meta property="article:author" content="Liujialong">
+<meta property="article:tag" content="算法">
+<meta property="article:tag" content="符号表">
+<meta property="article:tag" content="字典">
+<meta property="article:tag" content="查找">
+<meta property="article:tag" content="散列表">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://liujialongstar.github.io/2021/08/11/%E6%95%A3%E5%88%97%E8%A1%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>散列表 | Longlong</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <main class="main">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+        <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longlong</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">A Rookie Programmer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#散列函数"><span class="nav-number">1.</span> <span class="nav-text">散列函数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#正整数"><span class="nav-number">1.1.</span> <span class="nav-text">正整数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#浮点数"><span class="nav-number">1.2.</span> <span class="nav-text">浮点数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#字符串"><span class="nav-number">1.3.</span> <span class="nav-text">字符串</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#组合键"><span class="nav-number">1.4.</span> <span class="nav-text">组合键</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#将hashCode-的返回值转化为一个数组索引"><span class="nav-number">1.5.</span> <span class="nav-text">将hashCode()的返回值转化为一个数组索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#软缓存"><span class="nav-number">1.6.</span> <span class="nav-text">软缓存</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基于拉链法的散列表"><span class="nav-number">2.</span> <span class="nav-text">基于拉链法的散列表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基于线性探测法的散列表"><span class="nav-number">3.</span> <span class="nav-text">基于线性探测法的散列表</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Liujialong</p>
+  <div class="site-description" itemprop="description">My records for programming and life</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </header>
+
+      
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div id="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+      <div class="main-inner">
+        
+
+        <div class="content post posts-expand">
+          
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://liujialongstar.github.io/2021/08/11/%E6%95%A3%E5%88%97%E8%A1%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Liujialong">
+      <meta itemprop="description" content="My records for programming and life">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longlong">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          散列表
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-11 15:00:37" itemprop="dateCreated datePublished" datetime="2021-08-11T15:00:37+08:00">2021-08-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-08-12 17:46:15" itemprop="dateModified" datetime="2021-08-12T17:46:15+08:00">2021-08-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95/" itemprop="url" rel="index"><span itemprop="name">算法</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>如果所有的键都是小的整数, 就可以使用一个数组来实现无序的符号表, 将键作为数组的索引而数组中键i处存储的就是它对应的值. 这样就可以快速访问任意键的值. </p>
+<p><strong>散列表</strong>就是这种简易方法的扩展并能处理更加复杂的类型的键.</p>
+<p>散列表的查找算法分为两步. 首先使用<strong>散列函数</strong>将被查找的键转化为数组的一个索引. 理想情况下, 不同的键都能转化为不同的索引值. 但实际上需面对两个或多个键都散列到相同索引的情况. 因此, 散列查找的第二步就是<strong>处理碰撞冲突</strong>. 解决碰撞冲突主要使用<strong>拉链法</strong>和<strong>线性探测法</strong>.</p>
+<p>散列表是算法再时间和空间上做出权衡的经典例子. 如果没有内存限制, 可以直接使用键作为(可能是一个超大的)数组索引, 那么所有查找操作只需要访问内存一次即可; 如果没有时间限制, 可以使用无序数组并顺序查找, 这样需要很少内存, 但时间是线性的.</p>
+<p>而使用散列表, 就可以实现在一般应用中拥有<em>常数级别</em>的查找和插入操作的符号表.</p>
+<a id="more"></a>
+
+<h2 id="散列函数"><a href="#散列函数" class="headerlink" title="散列函数"></a>散列函数</h2><p><strong>散列函数</strong>会将键转换为数组的索引. 如果有一个能够保存M个键值对的数组, 那么就需要一个能够将任意键转化为该数组范围内的索引([0,M-1]范围内的整数)的<strong>散列函数</strong>. </p>
+<p>散列函数应该易于计算并能够均匀分布所有的键, 即对于任意键, 0到M-1之间的每个整数都有相同的可能性与之对应(与键无关).</p>
+<p>散列函数和键的类型有关. 严格地说, 对于每种类型的键, 我们都需要一个与之对应的散列函数. 如果键是一个数字, 那么就可以直接使用这个数字; 如果键是一个字符串, 那么就需要将这个字符串转化为一个数字. </p>
+<h3 id="正整数"><a href="#正整数" class="headerlink" title="正整数"></a>正整数</h3><p>将整数散列最常用的方法是<strong>除留余数法</strong>. 选取大小为素数M的数组, 对于任意正整数k, 计算k除以M的余数(K%M). 如果M不是素数, 可能导致无法均匀地散列散列值. </p>
+<h3 id="浮点数"><a href="#浮点数" class="headerlink" title="浮点数"></a>浮点数</h3><p>如果键是0到1之间的实数, 就将它乘以M并四舍五入到一个0至M-1之间的索引值. 这个方法存在缺陷, 键的高位起的作用更大, 最低为对散列值没有影响. 修正方法是将键表示为二进制数然后在使用除留余数法(Java默认就是如此处理的).</p>
+<h3 id="字符串"><a href="#字符串" class="headerlink" title="字符串"></a>字符串</h3><p>除留余数法也可以处理较长的键, 例如字符串, 只需要将它们当作大整数即可. 例如下列代码就能够使用除留余数法计算String s的散列值:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> hash = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; s.length; i++) &#123;</span><br><span class="line">    hash = (R * hash + s.charAt(i)) % M;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Java的charAt()方法可以返回一个char值, 即一个非负16位整数. 如果R比任何字符串的值都大, 这种计算相当于将字符串当作一个N位的R进制值, 将它除以M并取余.</p>
+<p>只要R足够小, 不造成移除, 那么结果就如我们所愿, 落在0至M-1之内. 例如Java的String的默认实现就是使用了类似的方法, R取值31, 下面是Java的实现代码:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">hashCode</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> h = hash;</span><br><span class="line">    <span class="keyword">if</span> (h == <span class="number">0</span> &amp;&amp; value.length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">char</span> val[] = value;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; value.length; i++) &#123;</span><br><span class="line">            h = <span class="number">31</span> * h + val[i];</span><br><span class="line">        &#125;</span><br><span class="line">        hash = h;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> h;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="组合键"><a href="#组合键" class="headerlink" title="组合键"></a>组合键</h3><p>如果键的类型含有多个整型变量, 就可以和String类型一样将它们混合起来. 例如, 假设被查找的键的类型是Date, 其中含有几个整型的域: day(两个数字表示的日), month(两个数字表示的月)和year(四个数字表示的年). 我们可以这样计算它的散列值:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> hash = (((day * R + month) % M) * R + year) % M;</span><br></pre></td></tr></table></figure>
+
+<p>只要R足够小不造成溢出, 也可以得到一个0至M-1之间的散列值. 和字符串的散列算法一样, 这个方法也能处理有任意多整型变量的类型.</p>
+<h3 id="将hashCode-的返回值转化为一个数组索引"><a href="#将hashCode-的返回值转化为一个数组索引" class="headerlink" title="将hashCode()的返回值转化为一个数组索引"></a>将hashCode()的返回值转化为一个数组索引</h3><p>因为我们需要的是数组的索引而不是一个32位的整数, 所以视线中会将默认的hashCode()方法和除留余数法结合起来产生一个0到M-1的整数, 方法如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">hash</span><span class="params">(Key x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (x.hashCode() &amp; <span class="number">0x7fffffff</span>) % M ;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这段代码会将符号位屏蔽(将一个32位整数变成一个31位非负整数), 然后用除留余数法计算它除以M的余数. </p>
+<h3 id="软缓存"><a href="#软缓存" class="headerlink" title="软缓存"></a>软缓存</h3><p>如果散列值的计算很耗时, 那么可以将每个键的散列值缓存起来, 即每个键中使用一个hash变量保存它的hashCode()的返回值. 第一次调用hashCode()方法时需要计算对象的散列值, 但之后对hashCode()的调用会直接返回hash变量的值. Java中的String对象的hashCode()方法就是使用这种方法减少计算量(参见上面String的hashCode()方法的代码).</p>
+<p>综上, 为一个数据类型实现一个优秀的散列方法需要满足三个条件:</p>
+<ul>
+<li>一致性: 等价的键必然产生相等的散列值;</li>
+<li>高效性: 计算方便;</li>
+<li>均匀性: 均匀地散列所有的键.</li>
+</ul>
+<h2 id="基于拉链法的散列表"><a href="#基于拉链法的散列表" class="headerlink" title="基于拉链法的散列表"></a>基于拉链法的散列表</h2><p>散列算法的第二步是<strong>碰撞处理</strong>, 就是处理两个或多个键的散列值相同的情况. </p>
+<p><strong>拉链法</strong>就是将大小为M的数组中的每个元素指向一条链表, 链表中的每个结点都存储了散列值为该元素的索引的键值对. 发生冲突的元素都被存储在链表中(LinkedList[]).</p>
+<p>这个方法的基本思想就是选择足够大的M, 是的所有链表都尽可能短以保证高效的查找. 查找分为两步: 首先找到散列值对应的链表, 然后沿着链表顺序查找对应的键.</p>
+<p>拉链法的一种实现是使用原始的链表数据类型来扩展SequentialSearchSymbolTable(详见<a href="http://liujialongstar.github.io/2021/07/08/%E7%AC%A6%E5%8F%B7%E8%A1%A8-%E5%AD%97%E5%85%B8/">无序链表中的顺序查找</a>). 另一种更简单的方法(但是效率低)是采用一般性的策略, 为M个元素分别创建符号表来保存散列到这里的键, 这样也可以重用SequentialSearchSymbolTable. </p>
+<p>第二种方法实现代码如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> liujialong</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@date</span> 2021/8/12</span></span><br><span class="line"><span class="comment"> * 拉链法实现符号表 为M个元素分别创建符号表</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SeparateChainingHashSymbolTable</span>&lt;<span class="title">K</span>, <span class="title">V</span>&gt; </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 键值对总数</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> N;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 散列表大小</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> M;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 存放链表对象的数组</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> SequentialSearchSymbolTable&lt;K, V&gt;[] st;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SeparateChainingHashSymbolTable</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>(<span class="number">997</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 创建M条链表</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> M</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SeparateChainingHashSymbolTable</span><span class="params">(<span class="keyword">int</span> M)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.M = M;</span><br><span class="line">        st = (SequentialSearchSymbolTable&lt;K, V&gt;[]) <span class="keyword">new</span> SequentialSearchSymbolTable[M];</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; M; i++) &#123;</span><br><span class="line">            st[i] = <span class="keyword">new</span> SequentialSearchSymbolTable&lt;&gt;();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">hash</span><span class="params">(K key)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> (key.hashCode() &amp; <span class="number">0x7fffffff</span>) / M;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> V <span class="title">get</span><span class="params">(K key)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> (V) st[hash(key)].get(key);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">put</span><span class="params">(K key, V val)</span> </span>&#123;</span><br><span class="line">        st[hash(key)].put(key, val);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这段代码默认构造函数会使用997条链表, 因此对于较大的符号表, 这种实现比SequentialSearchSymbolTable大约快1000倍. 当能够预知所需要的符号表的大小时, 这一方案能够得到不错的性能. 另一种更可靠的方案时动态调整链表数组的大小, 这样无论符号表中有多少键值对都能保证链表较短.</p>
+<blockquote>
+<p>在一张含有M条链表和N个键的散列表中, 未命中查找和插入操作所需要的比较次数为~N/M.</p>
+</blockquote>
+<h2 id="基于线性探测法的散列表"><a href="#基于线性探测法的散列表" class="headerlink" title="基于线性探测法的散列表"></a>基于线性探测法的散列表</h2><p>实现散列表的另一种方式是用大小为M的数组保存N个键值对. 其中M&gt;N. 我们需要依靠数组中的空位解决碰撞冲突. 基于这种策略的所有方法被统称为<strong>开放地址散列表</strong>.</p>
+<p>开放地址散列表中最简单的方法叫做<strong>线性探测法</strong>: 当碰撞发生时(当一个键的散列值已经被另一个不同的键占用), 我们直接检测散列表中的下一个位置(索引值加1). 这样的线性探测可能产生三种结果:</p>
+<ul>
+<li>命中: 该位置的键和被查找的键相同;</li>
+<li>未命中: 键为空(该位置没有键);</li>
+<li>继续查找: 该位置的键和被查找的键不同.</li>
+</ul>
+<p>使用散列函数找到键在数组中的索引, 检查其中的键和被查找的键是否相同. 如果不同则继续查找(索引增加, 到达数组结尾时这回数组开头), 直到找到该键(替换值)或者遇到一个空元素(插入). </p>
+<blockquote>
+<p>线性探测法处理碰撞时的方式是先到先得, 空元素作为查找结束的标志.</p>
+</blockquote>
+<p>线性探测的平均成本取决于元素在插入元素后聚集成的一组连续的条目, 称为键簇. 短小的键簇能够保证较高的效率</p>
+<p>基于线性探测法的散列表不能直接将被删除的键所在的位置设置为null, 因为这回导致后面相同散列值的键无法被探测到(空位是探测结束的标志). 因此需要将簇中被删除的键的右侧所有的键重新插入散列表.</p>
+<p>线性探测法实现代码如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> liujialong</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@date</span> 2021/8/12</span></span><br><span class="line"><span class="comment"> * 基于线性探测法实现的符号表</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">LinearProbingHashSymbolTable</span>&lt;<span class="title">K</span>, <span class="title">V</span>&gt; </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 符号表中键值对总数</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> N;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 线性探测表的大小</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> M = <span class="number">16</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> K[] keys;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> V[] vals;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">LinearProbingHashSymbolTable</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        keys = (K[]) <span class="keyword">new</span> Object[M];</span><br><span class="line">        vals = (V[]) <span class="keyword">new</span> Object[M];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">LinearProbingHashSymbolTable</span><span class="params">(<span class="keyword">int</span> cap)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.M = cap;</span><br><span class="line">        keys = (K[]) <span class="keyword">new</span> Object[M];</span><br><span class="line">        vals = (V[]) <span class="keyword">new</span> Object[M];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">hash</span><span class="params">(K key)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> (key.hashCode() &amp; <span class="number">0xfffffff</span>) %M;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">resize</span><span class="params">(<span class="keyword">int</span> cap)</span> </span>&#123;</span><br><span class="line">        LinearProbingHashSymbolTable&lt;K, V&gt; t = <span class="keyword">new</span> LinearProbingHashSymbolTable&lt;&gt;(cap);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; M; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span>(keys[i] != <span class="keyword">null</span>)&#123;</span><br><span class="line">                t.put(keys[i], vals[i]);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        keys = t.keys;</span><br><span class="line">        vals = t.vals;</span><br><span class="line">        M = t.M;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">put</span><span class="params">(K key, V val)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(N &gt;= M/<span class="number">2</span>) &#123;</span><br><span class="line">            resize(<span class="number">2</span> * M);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">int</span> i;</span><br><span class="line">        <span class="keyword">for</span>(i = hash(key); keys[i] != <span class="keyword">null</span>; i = (i+<span class="number">1</span>) % M)&#123;</span><br><span class="line">            <span class="keyword">if</span>(keys[i].equals(key)) &#123;</span><br><span class="line">                vals[i] = val;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        keys[i] = key;</span><br><span class="line">        vals[i] = val;</span><br><span class="line">        N++;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> V <span class="title">get</span><span class="params">(K key)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = hash(key); keys[i] != <span class="keyword">null</span>; i = (i+<span class="number">1</span>) % M)&#123;</span><br><span class="line">            <span class="keyword">if</span>(keys[i].equals(key)) &#123;</span><br><span class="line">                <span class="keyword">return</span> vals[i];</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">delete</span><span class="params">(K key)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(!contains(key)) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">int</span> i = hash(key);</span><br><span class="line">        <span class="keyword">while</span>(!key.equals(keys[i]))&#123;</span><br><span class="line">            i = (i + <span class="number">1</span>) % M;</span><br><span class="line">        &#125;</span><br><span class="line">        keys[i] = <span class="keyword">null</span>;</span><br><span class="line">        vals[i] = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//重新插入空位之后的键</span></span><br><span class="line">        i = (i + <span class="number">1</span>) % M;</span><br><span class="line">        <span class="keyword">while</span> (keys[i] != <span class="keyword">null</span>) &#123;</span><br><span class="line">            K keyToRedo = keys[i];</span><br><span class="line">            V valToRedo = vals[i];</span><br><span class="line">            keys[i] = <span class="keyword">null</span>;</span><br><span class="line">            vals[i] = <span class="keyword">null</span>;</span><br><span class="line">            <span class="comment">//删除当前元素, 减1, 下面put()会加回来</span></span><br><span class="line">            N--;</span><br><span class="line">            put(keyToRedo, valToRedo);</span><br><span class="line">            i = (i + <span class="number">1</span>) % M;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//删除key之后, 数组元素减1</span></span><br><span class="line">        N--;</span><br><span class="line">        <span class="keyword">if</span>(N &gt; <span class="number">0</span> &amp;&amp; N == M/<span class="number">8</span>) &#123;</span><br><span class="line">            resize(M/<span class="number">2</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">contains</span><span class="params">(K key)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> get(key) != <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%AE%97%E6%B3%95/" rel="tag"># 算法</a>
+              <a href="/tags/%E7%AC%A6%E5%8F%B7%E8%A1%A8/" rel="tag"># 符号表</a>
+              <a href="/tags/%E5%AD%97%E5%85%B8/" rel="tag"># 字典</a>
+              <a href="/tags/%E6%9F%A5%E6%89%BE/" rel="tag"># 查找</a>
+              <a href="/tags/%E6%95%A3%E5%88%97%E8%A1%A8/" rel="tag"># 散列表</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/07/28/%E5%B9%B3%E8%A1%A1%E6%9F%A5%E6%89%BE%E6%A0%91/" rel="prev" title="平衡查找树">
+      <i class="fa fa-chevron-left"></i> 平衡查找树
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/12/31/2022%E8%A7%84%E5%88%92/" rel="next" title="2022规划">
+      2022规划 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+        </div>
+        
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Liujialong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

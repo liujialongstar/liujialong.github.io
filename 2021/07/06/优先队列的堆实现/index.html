@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"liujialongstar.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.3","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="堆是一类特殊的数据结构的统称. 堆通常是一个可以被看作一棵树的数组对象.  二叉堆是一种特殊的堆, 是一组能够用堆有序的完全二叉树排序的元素, 并在数组中按照层级存储(不使用数组的第一个位置). 二叉堆分为两种: 最大堆和最小堆. 最大堆父节点的键值总是大于或等于任何一个子节点的键值; 最小堆父节点的键值总是小于或等于任何一个子节点的键值. 完全二叉树的具体表示法是将二叉树的节点按照层级顺序放入数">
+<meta property="og:type" content="article">
+<meta property="og:title" content="优先队列的堆实现">
+<meta property="og:url" content="https://liujialongstar.github.io/2021/07/06/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97%E7%9A%84%E5%A0%86%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:site_name" content="Longlong">
+<meta property="og:description" content="堆是一类特殊的数据结构的统称. 堆通常是一个可以被看作一棵树的数组对象.  二叉堆是一种特殊的堆, 是一组能够用堆有序的完全二叉树排序的元素, 并在数组中按照层级存储(不使用数组的第一个位置). 二叉堆分为两种: 最大堆和最小堆. 最大堆父节点的键值总是大于或等于任何一个子节点的键值; 最小堆父节点的键值总是小于或等于任何一个子节点的键值. 完全二叉树的具体表示法是将二叉树的节点按照层级顺序放入数">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-07-06T10:26:17.000Z">
+<meta property="article:modified_time" content="2021-07-07T10:24:43.197Z">
+<meta property="article:author" content="Liujialong">
+<meta property="article:tag" content="算法">
+<meta property="article:tag" content="优先队列">
+<meta property="article:tag" content="堆">
+<meta property="article:tag" content="二叉堆">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://liujialongstar.github.io/2021/07/06/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97%E7%9A%84%E5%A0%86%E5%AE%9E%E7%8E%B0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>优先队列的堆实现 | Longlong</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <main class="main">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+        <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longlong</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">A Rookie Programmer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#二叉堆的算法"><span class="nav-number">1.</span> <span class="nav-text">二叉堆的算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#由下至上的堆有序化-上浮"><span class="nav-number">1.1.</span> <span class="nav-text">由下至上的堆有序化(上浮)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#由上至下的堆有序化-下沉"><span class="nav-number">1.2.</span> <span class="nav-text">由上至下的堆有序化(下沉)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#优先队列的实现"><span class="nav-number">1.3.</span> <span class="nav-text">优先队列的实现</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Liujialong</p>
+  <div class="site-description" itemprop="description">My records for programming and life</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </header>
+
+      
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div id="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+      <div class="main-inner">
+        
+
+        <div class="content post posts-expand">
+          
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://liujialongstar.github.io/2021/07/06/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97%E7%9A%84%E5%A0%86%E5%AE%9E%E7%8E%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Liujialong">
+      <meta itemprop="description" content="My records for programming and life">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longlong">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          优先队列的堆实现
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-06 18:26:17" itemprop="dateCreated datePublished" datetime="2021-07-06T18:26:17+08:00">2021-07-06</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-07-07 18:24:43" itemprop="dateModified" datetime="2021-07-07T18:24:43+08:00">2021-07-07</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95/" itemprop="url" rel="index"><span itemprop="name">算法</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><strong>堆</strong>是一类特殊的数据结构的统称. 堆通常是一个可以被看作一棵树的数组对象. </p>
+<p><strong>二叉堆</strong>是一种特殊的堆, 是一组能够用堆有序的完全二叉树排序的元素, 并在数组中按照层级存储(不使用数组的第一个位置). 二叉堆分为两种: 最大堆和最小堆. 最大堆父节点的键值总是大于或等于任何一个子节点的键值; 最小堆父节点的键值总是小于或等于任何一个子节点的键值.</p>
+<p>完全二叉树的具体表示法是将二叉树的节点按照<strong>层级顺序</strong>放入数组中, 根节点在位置1, 它的子节点在位置2和3, 而子节点的子节点分别在位置4567, 以此类推.</p>
+<p>在二叉堆中, 位置k的节点的父节点的位置为k/2, 它的子节点的位置分别为2k和2k+1. 这样在不使用指针的情况下, 也可以通过计算数组的索引在树中上下移动: 从a[k]向上一层就令k等于k/2, 向下一层则令k等于2k或2k+1.</p>
+<p>使用二叉堆可以让我们高效地实现优先队列. 接下来我们将用二叉堆实现对数级别的<strong>插入元素和删除最小元素</strong>的操作. 一棵大小为N的的完全二叉树的高度为lgN, 利用这一点, 即可保证对数复杂度的性能.</p>
+<a id="more"></a>
+
+<h2 id="二叉堆的算法"><a href="#二叉堆的算法" class="headerlink" title="二叉堆的算法"></a>二叉堆的算法</h2><p>我们以最小堆为例, 演示二叉堆的算法.</p>
+<p>我们使用长度为N+1的私有数组pq[]来表示一个大小为N的最小堆, 不会使用pq[0], 堆元素存放在pq[1]至pq[N]中. 最小堆的操作会首先打破堆的状态, 然后再遍历堆并按照要求将堆的状态恢复. 这个过程叫做<strong>堆的有序化</strong>(reheapifying).</p>
+<p>在最小堆的有序化的过程中会遇到两种情况. 当某个节点的优先级上升(或是在堆底加入一个新元素)时, 需要<strong>由下至上</strong>恢复堆的顺序; 当某个节点的优先级下降(例如, 将根节点替换为一个较大的元素)时, 我们需要<strong>由上至下</strong>恢复堆的顺序.</p>
+<h3 id="由下至上的堆有序化-上浮"><a href="#由下至上的堆有序化-上浮" class="headerlink" title="由下至上的堆有序化(上浮)"></a>由下至上的堆有序化(上浮)</h3><p>如果最小堆的有序状态因为某个节点变得比它的父节点更小而被打破, 我们就需要通过交换它和它的父节点来修复, 直到遇到一个更小的父节点, 或者成为根节点. 方法如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">swim</span><span class="params">(<span class="keyword">int</span> k)</span></span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (k &gt; <span class="number">1</span> &amp;&amp; less(k, k/<span class="number">2</span>)) &#123;</span><br><span class="line">        exchange(k, k/<span class="number">2</span>);</span><br><span class="line">        k = k/<span class="number">2</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="由上至下的堆有序化-下沉"><a href="#由上至下的堆有序化-下沉" class="headerlink" title="由上至下的堆有序化(下沉)"></a>由上至下的堆有序化(下沉)</h3><p>如果最小堆堆的有序状态因为某个节点变得比它的两个子节点或是其中之一更大了而被打破, 那么可以通过将它和它的两个子节点中的较小者交换来恢复堆. 直到它的子节点都比它大或者到达堆的底部. 方法如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">sink</span><span class="params">(<span class="keyword">int</span> k)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (k*<span class="number">2</span> &lt;= N) &#123;</span><br><span class="line">        <span class="keyword">int</span> j = k*<span class="number">2</span>;</span><br><span class="line">        <span class="comment">// 如果存在两个子节点, 比较两个子节点, 得到较小的一个</span></span><br><span class="line">        <span class="keyword">if</span>(j &lt; N &amp;&amp; less(j+<span class="number">1</span>, j)) &#123;</span><br><span class="line">            j++;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 如果k小于子节点中较小的一个, 跳出循环</span></span><br><span class="line">        <span class="keyword">if</span>(less(k, j))&#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 否则交换节点</span></span><br><span class="line">        exchange(k, j);</span><br><span class="line">        k = j;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="优先队列的实现"><a href="#优先队列的实现" class="headerlink" title="优先队列的实现"></a>优先队列的实现</h3><p>实现优先队列重点在于实现以下两个方法: </p>
+<ul>
+<li><strong>插入元素</strong>: 将新元素加到数组末尾, 增加堆的大小并让这个新元素上浮到合适的位置;</li>
+<li><strong>删除最小元素</strong>: 从数组顶端删去最小元素并将数组的最后一个元素放到顶端, 减小堆的大小并让这个元素下沉到合适的位置.</li>
+</ul>
+<p>具体实现如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> liujialong</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@date</span> 2021/7/6</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@SuppressWarnings</span>(<span class="string">"all"</span>)</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HeapMinPriorityQueue</span>&lt;<span class="title">T</span> <span class="keyword">extends</span> <span class="title">Comparable</span>&lt;<span class="title">T</span>&gt;&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> N;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> T[] pq;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">HeapMinPriorityQueue</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        pq = (T[]) <span class="keyword">new</span> Comparable[<span class="number">1</span>];</span><br><span class="line">        N = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 因为位置0不适用, 创建N+1的容量</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> capacity</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">HeapMinPriorityQueue</span><span class="params">(<span class="keyword">int</span> capacity)</span> </span>&#123;</span><br><span class="line">        pq = (T[]) <span class="keyword">new</span> Comparable[capacity+<span class="number">1</span>];</span><br><span class="line">        N = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">HeapMinPriorityQueue</span><span class="params">(T[] pq)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.pq = pq;</span><br><span class="line">        N = pq.length;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 插入元素(位置0不使用)</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> v</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">insert</span><span class="params">(T v)</span> </span>&#123;</span><br><span class="line">        pq[++N] = v;</span><br><span class="line">        swim(N);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 删除最小元素</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">delMin</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        T item = pq[<span class="number">1</span>];</span><br><span class="line">        exchange(<span class="number">1</span>, N--);</span><br><span class="line">        pq[N+<span class="number">1</span>] = <span class="keyword">null</span>;</span><br><span class="line">        sink(<span class="number">1</span>);</span><br><span class="line">        <span class="keyword">return</span> item;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isEmpty</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.N == <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">size</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> N;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 上浮操作, 当节点k元素小于于父节点k/2元素时, 交换两个节点的元素, 直到遇到更小的父节点, 或者k是根节点</span></span><br><span class="line"><span class="comment">     *<span class="doctag">@param</span> k</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">swim</span><span class="params">(<span class="keyword">int</span> k)</span></span>&#123;</span><br><span class="line">        <span class="keyword">while</span> (k &gt; <span class="number">1</span> &amp;&amp; less(k, k/<span class="number">2</span>)) &#123;</span><br><span class="line">            exchange(k, k/<span class="number">2</span>);</span><br><span class="line">            k = k/<span class="number">2</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 下沉操作, 交换k节点和它的子节点2k与2k+1中的较小一个, 直到k小于所有子节点, 或者到达堆底</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> k</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">sink</span><span class="params">(<span class="keyword">int</span> k)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">while</span> (k*<span class="number">2</span> &lt;= N) &#123;</span><br><span class="line">            <span class="keyword">int</span> j = k*<span class="number">2</span>;</span><br><span class="line">            <span class="comment">// 如果存在两个子节点, 比较两个子节点, 得到较小的一个</span></span><br><span class="line">            <span class="keyword">if</span>(j &lt; N &amp;&amp; less(j+<span class="number">1</span>, j)) &#123;</span><br><span class="line">                j++;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 如果k小于子节点中较小的一个, 跳出循环</span></span><br><span class="line">            <span class="keyword">if</span>(less(k, j))&#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 否则交换节点</span></span><br><span class="line">            exchange(k, j);</span><br><span class="line">            k = j;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 比较</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> i</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> j</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">less</span><span class="params">(<span class="keyword">int</span> i, <span class="keyword">int</span> j)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> pq[i].compareTo(pq[j]) &lt; <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 交换</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> i</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> j</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">exchange</span><span class="params">(<span class="keyword">int</span> i, <span class="keyword">int</span> j)</span> </span>&#123;</span><br><span class="line">        T t = pq[i];</span><br><span class="line">        pq[i] = pq[j];</span><br><span class="line">        pq[j] = t;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> M = <span class="number">3</span>;</span><br><span class="line">        String[] a = &#123;<span class="string">"q"</span>,<span class="string">"w"</span>,<span class="string">"e"</span>,<span class="string">"r"</span>,<span class="string">"t"</span>,<span class="string">"y"</span>,<span class="string">"u"</span>,<span class="string">"i"</span>,<span class="string">"o"</span>,<span class="string">"p"</span>,<span class="string">"a"</span>,<span class="string">"s"</span>,<span class="string">"d"</span>,<span class="string">"f"</span>,<span class="string">"g"</span>,<span class="string">"h"</span>,<span class="string">"j"</span>,<span class="string">"k"</span>,<span class="string">"l"</span>,<span class="string">"z"</span>,<span class="string">"x"</span>,<span class="string">"c"</span>,<span class="string">"v"</span>,<span class="string">"b"</span>,<span class="string">"n"</span>,<span class="string">"m"</span>&#125;;</span><br><span class="line">        <span class="keyword">int</span> N = a.length;</span><br><span class="line">        HeapMinPriorityQueue&lt;String&gt; pq = <span class="keyword">new</span> HeapMinPriorityQueue&lt;&gt;(M+<span class="number">1</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</span><br><span class="line">            pq.insert(a[i]);</span><br><span class="line">            <span class="keyword">if</span>(pq.N &gt; M) &#123;</span><br><span class="line">                pq.delMin();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        LinkedStack&lt;String&gt; stack = <span class="keyword">new</span> LinkedStack&lt;&gt;();</span><br><span class="line">        <span class="keyword">while</span> (!pq.isEmpty()) &#123;</span><br><span class="line">            stack.push(pq.delMin());</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">for</span>(String s: stack) &#123;</span><br><span class="line">            System.out.println(s);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%AE%97%E6%B3%95/" rel="tag"># 算法</a>
+              <a href="/tags/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97/" rel="tag"># 优先队列</a>
+              <a href="/tags/%E5%A0%86/" rel="tag"># 堆</a>
+              <a href="/tags/%E4%BA%8C%E5%8F%89%E5%A0%86/" rel="tag"># 二叉堆</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/07/06/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97%E7%9A%84%E5%88%9D%E7%BA%A7%E5%AE%9E%E7%8E%B0/" rel="prev" title="优先队列的初级实现">
+      <i class="fa fa-chevron-left"></i> 优先队列的初级实现
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/07/08/%E7%AC%A6%E5%8F%B7%E8%A1%A8-%E5%AD%97%E5%85%B8/" rel="next" title="符号表(字典)的基本实现">
+      符号表(字典)的基本实现 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+        </div>
+        
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Liujialong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

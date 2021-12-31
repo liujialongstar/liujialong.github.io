@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"liujialongstar.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.3","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="符号表是一种存储键值对的数据结构, 支持两种操作: 插入(put), 即将一组新的键值对存入表中; 查找(get), 即根据给定的键得到相应的值. 符号表有时被称为字典, 在英语字典中, 键就是单词, 值就是单词对应的定义, 发音和词源.  符号表有时又叫做索引, 即书本最后将术语按照字母顺序列出方便查找的那部分. 在一本书的索引中, 键就是属于, 而值就是书中该术语出现的所有页码. 接下来, 我">
+<meta property="og:type" content="article">
+<meta property="og:title" content="符号表(字典)的基本实现">
+<meta property="og:url" content="https://liujialongstar.github.io/2021/07/08/%E7%AC%A6%E5%8F%B7%E8%A1%A8-%E5%AD%97%E5%85%B8/index.html">
+<meta property="og:site_name" content="Longlong">
+<meta property="og:description" content="符号表是一种存储键值对的数据结构, 支持两种操作: 插入(put), 即将一组新的键值对存入表中; 查找(get), 即根据给定的键得到相应的值. 符号表有时被称为字典, 在英语字典中, 键就是单词, 值就是单词对应的定义, 发音和词源.  符号表有时又叫做索引, 即书本最后将术语按照字母顺序列出方便查找的那部分. 在一本书的索引中, 键就是属于, 而值就是书中该术语出现的所有页码. 接下来, 我">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-07-08T01:45:11.000Z">
+<meta property="article:modified_time" content="2021-07-20T07:23:28.073Z">
+<meta property="article:author" content="Liujialong">
+<meta property="article:tag" content="算法">
+<meta property="article:tag" content="符号表">
+<meta property="article:tag" content="字典">
+<meta property="article:tag" content="查找">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://liujialongstar.github.io/2021/07/08/%E7%AC%A6%E5%8F%B7%E8%A1%A8-%E5%AD%97%E5%85%B8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>符号表(字典)的基本实现 | Longlong</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <main class="main">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+        <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Longlong</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">A Rookie Programmer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#API"><span class="nav-number">1.</span> <span class="nav-text">API</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#泛型"><span class="nav-number">1.1.</span> <span class="nav-text">泛型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#重复的键"><span class="nav-number">1.2.</span> <span class="nav-text">重复的键</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空-null-键"><span class="nav-number">1.3.</span> <span class="nav-text">空(null)键</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#空-null-值"><span class="nav-number">1.4.</span> <span class="nav-text">空(null)值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#删除操作"><span class="nav-number">1.5.</span> <span class="nav-text">删除操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#迭代"><span class="nav-number">1.6.</span> <span class="nav-text">迭代</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#键的等价性"><span class="nav-number">1.7.</span> <span class="nav-text">键的等价性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#无序链表中的顺序查找"><span class="nav-number">2.</span> <span class="nav-text">无序链表中的顺序查找</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#有序符号表"><span class="nav-number">3.</span> <span class="nav-text">有序符号表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#有序数组的二分查找"><span class="nav-number">4.</span> <span class="nav-text">有序数组的二分查找</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Liujialong</p>
+  <div class="site-description" itemprop="description">My records for programming and life</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </header>
+
+      
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div id="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+      <div class="main-inner">
+        
+
+        <div class="content post posts-expand">
+          
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://liujialongstar.github.io/2021/07/08/%E7%AC%A6%E5%8F%B7%E8%A1%A8-%E5%AD%97%E5%85%B8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Liujialong">
+      <meta itemprop="description" content="My records for programming and life">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Longlong">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          符号表(字典)的基本实现
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-08 09:45:11" itemprop="dateCreated datePublished" datetime="2021-07-08T09:45:11+08:00">2021-07-08</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-07-20 15:23:28" itemprop="dateModified" datetime="2021-07-20T15:23:28+08:00">2021-07-20</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95/" itemprop="url" rel="index"><span itemprop="name">算法</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><strong>符号表</strong>是一种存储键值对的数据结构, 支持两种操作: <strong>插入(put)</strong>, 即将一组新的键值对存入表中; <strong>查找(get)</strong>, 即根据给定的键得到相应的值.</p>
+<p>符号表有时被称为<strong>字典</strong>, 在英语字典中, 键就是单词, 值就是单词对应的定义, 发音和词源. </p>
+<p>符号表有时又叫做<strong>索引</strong>, 即书本最后将术语按照字母顺序列出方便查找的那部分. 在一本书的索引中, 键就是属于, 而值就是书中该术语出现的所有页码.</p>
+<p>接下来, 我们将实现两种简单的符号表.</p>
+<a id="more"></a>
+
+<h2 id="API"><a href="#API" class="headerlink" title="API"></a>API</h2><p>符号表是一种典型的<strong>抽象数据结构</strong>: 它代表着一组定义清晰的值以及相应的操作, 使得我们能够将类型的实现和使用区分开来. 下面是符号表的API定义:</p>
+<table>
+<thead>
+<tr>
+<th>public class SymbolTable&lt;K, V&gt;</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SymbolTable()</td>
+<td>创建一张符号表</td>
+</tr>
+<tr>
+<td>void put(K key, V val)</td>
+<td>将键值对存放再表中(若值为空则将键key从表中删除)</td>
+</tr>
+<tr>
+<td>V get(K key)</td>
+<td>获取键key对应的值(若键key不存在则返回null)</td>
+</tr>
+<tr>
+<td>void delete(K key)</td>
+<td>从表中删除键key及其对应的值</td>
+</tr>
+<tr>
+<td>boolean contains(K key)</td>
+<td>键key再表中是否存在对应的值</td>
+</tr>
+<tr>
+<td>boolean isEmpty()</td>
+<td>表是否为空</td>
+</tr>
+<tr>
+<td>int size()</td>
+<td>表中键值对的数量</td>
+</tr>
+<tr>
+<td>Iterable<K> keys()</td>
+<td>表中所有键的集合</td>
+</tr>
+</tbody></table>
+<p>对于这份API, 使用了下面的这些设计决策.</p>
+<h3 id="泛型"><a href="#泛型" class="headerlink" title="泛型"></a>泛型</h3><p>设计方法时没有指定处理对象的类型, 而是使用了泛型. 对于符号表, 通过明确地指定查找时键和值地类型来区分它们地不同角色.</p>
+<h3 id="重复的键"><a href="#重复的键" class="headerlink" title="重复的键"></a>重复的键</h3><p>所有的实现都遵循以下规则:</p>
+<ul>
+<li>每个键只对应一个值(表中不允许存在重复的键);</li>
+<li>当用例代码向表中存入的键值对和表中已有的键值对冲突时, 新的值会替代旧的值.</li>
+</ul>
+<p>这些规则定义了<strong>关联数组的抽象形式</strong>. 可以将符号表想象成一个数组, 键即索引, 值即数组的元素. 在一个一般的数组中, 键就是整型的索引, 通过它来快速访问数组的元素; 再一个关联数组(符号表)中, 键可以是任意类型, 但仍可以用它来快速访问数组的内容. </p>
+<h3 id="空-null-键"><a href="#空-null-键" class="headerlink" title="空(null)键"></a>空(null)键</h3><p>键不能为空. 因为我们会用key调用compareTo()或equals()方法, <strong>null</strong>调用这两个方法会抛出一个空指针异常.</p>
+<h3 id="空-null-值"><a href="#空-null-值" class="headerlink" title="空(null)值"></a>空(null)值</h3><p>我们规定不允许有空值. 因为再我们的API定义中, 当键不存在的时候get()方法会返回空(null), 也就是说任何不再表中的键关联的值都是空. 这个规定会产生两个结果:</p>
+<ol>
+<li>我们可以用get方法是否返回空来测试给定的键是否存在于符号表中;</li>
+<li>我们可以将空值作为put()方法的第二个参数存入表中来实现删除;</li>
+</ol>
+<h3 id="删除操作"><a href="#删除操作" class="headerlink" title="删除操作"></a>删除操作</h3><p>在符号表中, 删除的实现可以有两种方法:</p>
+<ul>
+<li><strong>延时删除</strong>: 将键对应的值置为空, 然后在某个时候删去所有值为空的键;</li>
+<li><strong>即时删除</strong>: 立刻从表中删除指定的键.</li>
+</ul>
+<h3 id="迭代"><a href="#迭代" class="headerlink" title="迭代"></a>迭代</h3><p>为了方便用例处理表中的所有键值, 我们有时会在API的第一行加上<code>implements Iterable&lt;K&gt;</code>, 强制所有实现都必须包含iterator()方法来返回一个实现了hasNext()和next()方法的迭代器. 但是对于符号表, 我们采用一个更简单的方法, 来返回一个<code>Iterable&lt;K&gt;</code>对象以方便用例遍历所有的键. </p>
+<h3 id="键的等价性"><a href="#键的等价性" class="headerlink" title="键的等价性"></a>键的等价性</h3><p>要确定一个给定的键是否存在于符号表中, 首先要确立<strong>对象等价性</strong>的概念. 在Java中, 所有的对象都继承了equals()方法. Java也为标准数据类型如String实现了equals()方法. 而自定义的键则需要重写equals()方法. 最好使用不可变的数据类型作为键, 否则表的一致性无法保证.</p>
+<h2 id="无序链表中的顺序查找"><a href="#无序链表中的顺序查找" class="headerlink" title="无序链表中的顺序查找"></a>无序链表中的顺序查找</h2><p>符号表中使用的数据结构的一个简单选择是链表, 每个节点存储一个键值对. get()的实现即为遍历链表, 使用equals()方法比较需要被查找的键和每个节点中的键, 如果匹配成功返回相应的值, 否则返回null. put()的实现也是遍历链表, 使用equals()方法比较需要被查找的键和每个节点中的键, 如果匹配成功, 就用第二个参数指定的值更新该键相关联的值, 否则就用给定的键值对创建一个新的节点并插入到链表的开头. 这种方法被称为<strong>顺序查找</strong>: 在查找中, 一个一个地顺序遍历符号表中地所有键并使用equals()方法来寻找与被查找地键匹配地键.</p>
+<p>具体实现如下: </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> liujialong</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@date</span> 2021/7/9</span></span><br><span class="line"><span class="comment"> * 无序链表实现的顺序查找的符号表</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SequentialSearchSymbolTable</span>&lt;<span class="title">K</span>, <span class="title">V</span>&gt;</span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> N = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Node first;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SequentialSearchSymbolTable</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">put</span><span class="params">(K key, V val)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 如果val为空, 则调用delete()</span></span><br><span class="line">        <span class="keyword">if</span> (val == <span class="keyword">null</span>) &#123;</span><br><span class="line">            delete(key);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 顺序查找, 如果命中, 则更新值</span></span><br><span class="line">        <span class="keyword">for</span>(Node current = first; current != <span class="keyword">null</span>; current = current.next) &#123;</span><br><span class="line">            <span class="keyword">if</span>(key.equals(current.key))&#123;</span><br><span class="line">                current.value = val;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 未命中, 则在头部创建新的节点</span></span><br><span class="line">        first = <span class="keyword">new</span> Node(key, val, first);</span><br><span class="line">        N++;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> V <span class="title">get</span><span class="params">(K key)</span></span>&#123;</span><br><span class="line">        <span class="keyword">for</span>(Node current = first; current != <span class="keyword">null</span>; current = current.next) &#123;</span><br><span class="line">            <span class="keyword">if</span>(key.equals(current.key))&#123;</span><br><span class="line">                <span class="keyword">return</span> current.value;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">delete</span><span class="params">(K key)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(isEmpty()) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span>(key.equals(first.key))&#123;</span><br><span class="line">            first = first.next;</span><br><span class="line">            N--;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">for</span> (Node pre = first, current = first.next; current != <span class="keyword">null</span>; pre = pre.next, current = current.next) &#123;</span><br><span class="line">            <span class="keyword">if</span>(key.equals(current.key))&#123;</span><br><span class="line">                pre.next = current.next;</span><br><span class="line">                N--;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">contains</span><span class="params">(K key)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> get(key) != <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isEmpty</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> size() == <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">size</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> N;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function">Iterable&lt;K&gt; <span class="title">keys</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> KeySet();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="class"><span class="keyword">class</span> <span class="title">KeySet</span> <span class="keyword">implements</span> <span class="title">Iterable</span>&lt;<span class="title">K</span>&gt; </span>&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> Iterator&lt;K&gt; <span class="title">iterator</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> Iterator&lt;K&gt;() &#123;</span><br><span class="line">                <span class="keyword">private</span> Node current = first;</span><br><span class="line"></span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">hasNext</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                    <span class="keyword">return</span> current != <span class="keyword">null</span>;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="function"><span class="keyword">public</span> K <span class="title">next</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                    K item = current.key;</span><br><span class="line">                    current = current.next;</span><br><span class="line">                    <span class="keyword">return</span> item;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="class"><span class="keyword">class</span> <span class="title">Node</span> </span>&#123;</span><br><span class="line">        K key;</span><br><span class="line">        V value;</span><br><span class="line">        Node next;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">Node</span><span class="params">(K key, V value, Node next)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">this</span>.key = key;</span><br><span class="line">            <span class="keyword">this</span>.value = value;</span><br><span class="line">            <span class="keyword">this</span>.next = next;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        String[] a = &#123;<span class="string">"q"</span>,<span class="string">"w"</span>,<span class="string">"e"</span>,<span class="string">"r"</span>,<span class="string">"t"</span>,<span class="string">"y"</span>,<span class="string">"u"</span>,<span class="string">"i"</span>,<span class="string">"o"</span>,<span class="string">"p"</span>,<span class="string">"a"</span>,<span class="string">"s"</span>,<span class="string">"d"</span>,<span class="string">"f"</span>,<span class="string">"g"</span>,<span class="string">"h"</span>,<span class="string">"j"</span>,<span class="string">"k"</span>,<span class="string">"l"</span>,<span class="string">"z"</span>,<span class="string">"x"</span>,<span class="string">"c"</span>,<span class="string">"v"</span>,<span class="string">"b"</span>,<span class="string">"n"</span>,<span class="string">"m"</span>&#125;;</span><br><span class="line">        SequentialSearchSymbolTable&lt;String, Integer&gt; st = <span class="keyword">new</span> SequentialSearchSymbolTable&lt;&gt;();</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; a.length; i++) &#123;</span><br><span class="line">            String key = a[i];</span><br><span class="line">            st.put(key, i);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">for</span>(String s: st.keys())&#123;</span><br><span class="line">            System.out.println(s + <span class="string">": "</span> + st.get(s));</span><br><span class="line">            st.delete(s);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        System.out.println(st.get(<span class="string">"q"</span>));</span><br><span class="line">        System.out.println(st.size());</span><br><span class="line"></span><br><span class="line">        st.put(<span class="string">"q"</span>,<span class="number">100</span>);</span><br><span class="line">        System.out.println(st.get(<span class="string">"q"</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在含有N对键值地基于(无序)链表的符号表中, 未命中的查找和插入操作都需要N次比较. 命中的查找在最坏的情况下需要N次比较. 特别的, 向一个空表中插入N个不同的键需要N^2/2次比较.</p>
+<p>因此, 基于链表的实现以及顺序查找是非常低效的, 无法处理庞大的输入.</p>
+<h2 id="有序符号表"><a href="#有序符号表" class="headerlink" title="有序符号表"></a>有序符号表</h2><p>典型的应用程序中, 键都是Comparable的对象, 因此使用a.compareTo(b)来比较a和b两个键. 许多符号表的实现都利用了comparable接口带来的键的有序性来更好地实现put()和get()方法. 更重要的是在这些视线中, 我们可以认为<strong>符号表都会保持键的有序</strong>并大大扩展它的API.</p>
+<p>下表是使用Comparable的键的API:</p>
+<table>
+<thead>
+<tr>
+<th>public class OrderedSymbolTable&lt;K extends Comparable<K>, V&gt;</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SymbolTable()</td>
+<td>创建一张符号表</td>
+</tr>
+<tr>
+<td>void put(K key, V val)</td>
+<td>将键值对存放再表中(若值为空则将键key从表中删除)</td>
+</tr>
+<tr>
+<td>V get(K key)</td>
+<td>获取键key对应的值(若键key不存在则返回null)</td>
+</tr>
+<tr>
+<td>void delete(K key)</td>
+<td>从表中删除键key及其对应的值</td>
+</tr>
+<tr>
+<td>boolean contains(K key)</td>
+<td>键key再表中是否存在对应的值</td>
+</tr>
+<tr>
+<td>boolean isEmpty()</td>
+<td>表是否为空</td>
+</tr>
+<tr>
+<td>K min()</td>
+<td>最小的键</td>
+</tr>
+<tr>
+<td>K max()</td>
+<td>最大的键</td>
+</tr>
+<tr>
+<td>K floor(K key)</td>
+<td>小于等于key的最大键</td>
+</tr>
+<tr>
+<td>K ceiling(K key)</td>
+<td>大于等于key的最小键</td>
+</tr>
+<tr>
+<td>int rank(K key)</td>
+<td>小于key的键的数量</td>
+</tr>
+<tr>
+<td>K select(int k)</td>
+<td>排名为k的键</td>
+</tr>
+<tr>
+<td>void deleteMin()</td>
+<td>删除最小的键</td>
+</tr>
+<tr>
+<td>void deleteMax()</td>
+<td>删除最大的键</td>
+</tr>
+<tr>
+<td>int size()</td>
+<td>表中键值对的数量</td>
+</tr>
+<tr>
+<td>int size(K low, K high)</td>
+<td>[low..high]之间的键的数量</td>
+</tr>
+<tr>
+<td>Iterable<K> keys(K low, K high)</td>
+<td>[low..high]之间所有键的集合, 已排序</td>
+</tr>
+<tr>
+<td>Iterable<K> keys()</td>
+<td>表中所有键的集合, 已排序</td>
+</tr>
+</tbody></table>
+<h2 id="有序数组的二分查找"><a href="#有序数组的二分查找" class="headerlink" title="有序数组的二分查找"></a>有序数组的二分查找</h2><p>有序符号表的实现, 使用了一组平行的数组作为数据结构, 一个存储键, 一个存储值. 该实现可以保证数组中的Comparable类型的键有序, 然后使用数组的索引来高效的实现get()和其他操作.</p>
+<p>这份实现的核心时rank()方法, 他返回表中小于给定键的键的数量. 对于get()方法, 只要给定的键存在于表中, rank()方法就能够精确的告诉我们在哪里能够找到它(如果找不到, 那它肯定不在表中).</p>
+<p>对于put()方法, 只要给定的键存在于表中, rank()方法就能够精确地告诉我们到哪里去更新它的值, 以及当键不存在于表中时, 将键存储到表的何处. 我们将所有更大的键向后移动一格来腾出位置, 并将给定的键值对分别插入到各自数组中的合适位置. </p>
+<p>具体实现如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> liujialong</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@date</span> 2021/7/9</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BinarySearchSymbolTable</span>&lt;<span class="title">K</span> <span class="keyword">extends</span> <span class="title">Comparable</span>&lt;<span class="title">K</span>&gt;, <span class="title">V</span>&gt; <span class="keyword">implements</span> <span class="title">OrderedSymbolTable</span>&lt;<span class="title">K</span>, <span class="title">V</span>&gt;</span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> N;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> K[] keys;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> V[] vals;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">BinarySearchSymbolTable</span><span class="params">(<span class="keyword">int</span> capacity)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> N = <span class="number">0</span>;</span><br><span class="line">        keys = (K[]) <span class="keyword">new</span> Comparable[capacity];</span><br><span class="line">        vals = (V[]) <span class="keyword">new</span> Object[capacity];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 添加元素, 如果key存在, 替换key对应的val, 如果key不存在, 在rank(key)的位置添加元素(数组右移)</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> key</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> val</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">put</span><span class="params">(K key, V val)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(val == <span class="keyword">null</span>) &#123;</span><br><span class="line">            delete(key);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">int</span> k = rank(key);</span><br><span class="line">        <span class="keyword">if</span>(k &lt; N &amp;&amp; keys[k].compareTo(key) == <span class="number">0</span>)&#123;</span><br><span class="line">            vals[k] = val;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (N == keys.length) resize(<span class="number">2</span>*keys.length);</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = N; i &gt; k; i--) &#123;</span><br><span class="line">            keys[i] = keys[i-<span class="number">1</span>];</span><br><span class="line">            vals[i] = vals[i-<span class="number">1</span>];</span><br><span class="line">        &#125;</span><br><span class="line">        keys[k] = key;</span><br><span class="line">        vals[k] = val;</span><br><span class="line">        N++;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">assert</span> <span class="title">check</span><span class="params">()</span></span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 获取指定键的值, 如果不存在, 返回空</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> key</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> V <span class="title">get</span><span class="params">(K key)</span></span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(isEmpty()) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">int</span> k = rank(key);</span><br><span class="line">        <span class="keyword">if</span>(k &lt; N &amp;&amp; keys[k].compareTo(key) == <span class="number">0</span>)&#123;</span><br><span class="line">            <span class="keyword">return</span> vals[k];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 删除元素, key不存在直接返回, key存在, 则key右边的元素左移</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> key</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">delete</span><span class="params">(K key)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(isEmpty()) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span> k = rank(key);</span><br><span class="line">        <span class="keyword">if</span>(k == N || keys[k].compareTo(key) != <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = k; i &lt; N-<span class="number">1</span>; i++) &#123;</span><br><span class="line">            keys[i] = keys[i+<span class="number">1</span>];</span><br><span class="line">            vals[i] = vals[i+<span class="number">1</span>];</span><br><span class="line">        &#125;</span><br><span class="line">        N--;</span><br><span class="line">        keys[N] = <span class="keyword">null</span>;</span><br><span class="line">        vals[N] = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">if</span> (N &gt; <span class="number">0</span> &amp;&amp; N == keys.length/<span class="number">4</span>) &#123;</span><br><span class="line">            resize(keys.length/<span class="number">2</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">assert</span> <span class="title">check</span><span class="params">()</span></span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">contains</span><span class="params">(K key)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> get(key) != <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isEmpty</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> size() == <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">size</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> N;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">size</span><span class="params">(K low, K high)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(high.compareTo(low) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">        &#125;<span class="keyword">else</span> <span class="keyword">if</span> (contains(high)) &#123;</span><br><span class="line">            <span class="keyword">return</span> rank(high) - rank(low) + <span class="number">1</span>;</span><br><span class="line">        &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> rank(high) - rank(low);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> K <span class="title">min</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(isEmpty()) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> keys[<span class="number">0</span>];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> K <span class="title">max</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(isEmpty()) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> keys[N-<span class="number">1</span>];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 返回小于等于key的最大键</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> key</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> K <span class="title">floor</span><span class="params">(K key)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> k = rank(key);</span><br><span class="line">        <span class="keyword">if</span>(k &lt; N &amp;&amp; key.compareTo(keys[k]) == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> keys[k];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span>(k == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> keys[k-<span class="number">1</span>];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 大于等于key的最小键</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> key</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> K <span class="title">ceiling</span><span class="params">(K key)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> k = rank(key);</span><br><span class="line">        <span class="keyword">if</span>(k == N) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> keys[k];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 二分查找, 返回小于key的键的数量</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> key</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">rank</span><span class="params">(K key)</span></span>&#123;</span><br><span class="line">        <span class="keyword">int</span> low = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">int</span> high = N-<span class="number">1</span>;</span><br><span class="line">        <span class="keyword">return</span> rank(key, low, high);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">rank</span><span class="params">(K key, <span class="keyword">int</span> low, <span class="keyword">int</span> high)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(high &lt; low) &#123;</span><br><span class="line">            <span class="keyword">return</span> low;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">int</span> mid = low + (high - low) / <span class="number">2</span>;</span><br><span class="line">        <span class="keyword">int</span> cmp = key.compareTo(keys[mid]);</span><br><span class="line">        <span class="keyword">if</span>(cmp &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> rank(key, low, mid - <span class="number">1</span>);</span><br><span class="line">        &#125;<span class="keyword">else</span> <span class="keyword">if</span>(cmp &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> rank(key, mid + <span class="number">1</span>, high);</span><br><span class="line">        &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> mid;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> K <span class="title">select</span><span class="params">(<span class="keyword">int</span> k)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(k &lt; <span class="number">0</span> || k &gt;= size()) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> keys[k];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deleteMin</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        delete(min());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deleteMax</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        delete(max());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Iterable&lt;K&gt; <span class="title">keys</span><span class="params">(K low, K high)</span> </span>&#123;</span><br><span class="line">        LinkedQueue&lt;K&gt; queue = <span class="keyword">new</span> LinkedQueue&lt;&gt;();</span><br><span class="line">        <span class="keyword">if</span>(low.compareTo(high) &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> queue;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = rank(low); i &lt; rank(high); i++) &#123;</span><br><span class="line">            queue.enqueue(keys[i]);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span>(contains(high))&#123;</span><br><span class="line">            queue.enqueue(keys[rank(high)]);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> queue;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Iterable&lt;K&gt; <span class="title">keys</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> keys(min(), max());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">resize</span><span class="params">(<span class="keyword">int</span> capacity)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">assert</span> capacity &gt;= N;</span><br><span class="line">        K[]   tempk = (K[])   <span class="keyword">new</span> Comparable[capacity];</span><br><span class="line">        V[] tempv = (V[]) <span class="keyword">new</span> Object[capacity];</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</span><br><span class="line">            tempk[i] = keys[i];</span><br><span class="line">            tempv[i] = vals[i];</span><br><span class="line">        &#125;</span><br><span class="line">        vals = tempv;</span><br><span class="line">        keys = tempk;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 检查符号表是否有序</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">check</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> isSorted() &amp;&amp; rankCheck();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 校验keys是否有序(由小到大)</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">isSorted</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; size(); i++) &#123;</span><br><span class="line">            <span class="keyword">if</span>(keys[i].compareTo(keys[i-<span class="number">1</span>]) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 校验vals是否有序</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">rankCheck</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; size(); i++) &#123;</span><br><span class="line">            <span class="keyword">if</span>(i != rank(select(i))) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; size(); i++) &#123;</span><br><span class="line">            <span class="keyword">if</span>(keys[i].compareTo(select(rank(keys[i]))) != <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        String[] a = &#123;<span class="string">"q"</span>,<span class="string">"w"</span>,<span class="string">"e"</span>,<span class="string">"r"</span>,<span class="string">"t"</span>,<span class="string">"y"</span>,<span class="string">"u"</span>,<span class="string">"i"</span>,<span class="string">"o"</span>,<span class="string">"p"</span>,<span class="string">"a"</span>,<span class="string">"s"</span>,<span class="string">"d"</span>,<span class="string">"f"</span>,<span class="string">"g"</span>,<span class="string">"h"</span>,<span class="string">"j"</span>,<span class="string">"k"</span>,<span class="string">"l"</span>,<span class="string">"z"</span>,<span class="string">"x"</span>,<span class="string">"c"</span>,<span class="string">"v"</span>,<span class="string">"b"</span>,<span class="string">"n"</span>,<span class="string">"m"</span>&#125;;</span><br><span class="line">        BinarySearchSymbolTable&lt;String, Integer&gt; st = <span class="keyword">new</span> BinarySearchSymbolTable&lt;&gt;(<span class="number">8</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; a.length; i++) &#123;</span><br><span class="line">            String key = a[i];</span><br><span class="line">            st.put(key, i);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">for</span>(String s: st.keys())&#123;</span><br><span class="line">            System.out.println(s + <span class="string">": "</span> + st.get(s));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%AE%97%E6%B3%95/" rel="tag"># 算法</a>
+              <a href="/tags/%E7%AC%A6%E5%8F%B7%E8%A1%A8/" rel="tag"># 符号表</a>
+              <a href="/tags/%E5%AD%97%E5%85%B8/" rel="tag"># 字典</a>
+              <a href="/tags/%E6%9F%A5%E6%89%BE/" rel="tag"># 查找</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/07/06/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97%E7%9A%84%E5%A0%86%E5%AE%9E%E7%8E%B0/" rel="prev" title="优先队列的堆实现">
+      <i class="fa fa-chevron-left"></i> 优先队列的堆实现
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/07/20/%E7%AC%A6%E5%8F%B7%E8%A1%A8%E7%9A%84%E4%BA%8C%E5%8F%89%E6%9F%A5%E6%89%BE%E6%A0%91%E5%AE%9E%E7%8E%B0/" rel="next" title="符号表的二叉查找树实现">
+      符号表的二叉查找树实现 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+        </div>
+        
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Liujialong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
